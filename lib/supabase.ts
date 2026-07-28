@@ -104,6 +104,7 @@ export async function fetchSupabaseLeaderboard() {
     const { data, error } = await supabase
       .from('users')
       .select('*')
+      .eq('is_admin', false)
       .order('xp', { ascending: false })
       .limit(50);
 

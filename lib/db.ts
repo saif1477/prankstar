@@ -155,7 +155,7 @@ export function updateUserStatsInDB(userId: string, updates: Partial<DBUser>): D
  */
 export function getRealLeaderboard(): DBUser[] {
   const users = getAllUsers();
-  return users.sort((a, b) => b.xp - a.xp);
+  return users.filter((u) => !u.isAdmin).sort((a, b) => b.xp - a.xp);
 }
 
 /**
