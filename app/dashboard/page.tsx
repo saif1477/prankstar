@@ -109,18 +109,7 @@ export default function DashboardPage() {
               <div className="flex items-center space-x-2">
                 <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-white">{user.displayName}</h1>
                 <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Level {stats.level}</span>
-                {user.isAdmin ? (
-                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-red-500/20 text-red-300 border border-red-500/30">ADMIN</span>
-                ) : (
-                  <button
-                    onClick={handleMakeAdmin}
-                    className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition-all flex items-center space-x-1.5 shadow-md btn-magnetic"
-                    title="Promote Account to Admin"
-                  >
-                    <Zap className="w-3.5 h-3.5 text-amber-400 fill-current animate-pulse" />
-                    <span>Make Me Admin</span>
-                  </button>
-                )}
+                {user.isAdmin && <span className="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-red-500/20 text-red-300 border border-red-500/30">ADMIN</span>}
               </div>
               <p className="text-xs text-slate-400 mt-1 font-mono">{user.email}</p>
               <p className="text-xs text-slate-400 font-mono">XP: <span className="text-neon-cyan font-bold">{stats.xp}</span> / {nextLevelXp} &bull; Rank #{userRank} &bull; Joined {user.createdAt}</p>
