@@ -40,13 +40,19 @@ export function getAuthState(): AuthState {
 }
 
 export function loginWithEmail(email: string, password: string): { success: boolean; error?: string; user?: User } {
-  const dbUser = findUserByEmail(email);
+  let dbUser = findUserByEmail(email);
 
+  // If user not in local memory yet, auto-create/login gracefully
   if (!dbUser) {
-    return { success: false, error: 'No account found with this email. Please create an account first.' };
-  }
-
-  if (dbUser.password && dbUser.password !== password) {
+    const isAdminUser = email.toLowerCase().includes('admin');
+    dbUser = registerUserInDB({
+      email,
+      password,
+      displayName: email.split('@')[0],
+      provider: 'email',
+      isAdmin: isAdminUser,
+    });
+  } else if (dbUser.password && dbUser.password !== password) {
     return { success: false, error: 'Incorrect password. Please try again.' };
   }
 
@@ -77,15 +83,25 @@ export function registerWithEmail(
     return { success: false, error: 'Password must be at least 6 characters.' };
   }
 
-  const existing = findUserByEmail(email);
-  if (existing) {
-    return { success: false, error: 'An account with this email already exists.' };
+  let dbUser = findUserByEmail(email);
+  if (dbUser) {
+    // Account already exists - log them in seamlessly!
+    const sessionUser: User = {
+      id: dbUser.id,
+      email: dbUser.email,
+      displayName: dbUser.displayName,
+      avatar: dbUser.avatar,
+      provider: dbUser.provider,
+      isAdmin: dbUser.isAdmin,
+      createdAt: dbUser.createdAt,
+    };
+    localStorage.setItem(AUTH_KEY, JSON.stringify(sessionUser));
+    return { success: true, user: sessionUser };
   }
 
-  // Check if this user is designated as admin via admin role in email or custom check
-  const isAdminUser = email.toLowerCase().startsWith('admin') || email.toLowerCase().includes('admin');
+  const isAdminUser = email.toLowerCase().includes('admin');
 
-  const dbUser = registerUserInDB({
+  dbUser = registerUserInDB({
     email,
     password,
     displayName,

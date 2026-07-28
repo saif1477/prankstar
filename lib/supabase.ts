@@ -137,3 +137,32 @@ export async function deleteUserFromSupabase(userId: string) {
     return null;
   }
 }
+
+export async function fetchUserFromSupabaseByEmail(email: string): Promise<DBUser | null> {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return {
+      id: data.id,
+      email: data.email,
+      displayName: data.display_name,
+      avatar: data.avatar,
+      provider: data.provider,
+      isAdmin: data.is_admin,
+      xp: data.xp,
+      level: data.level,
+      pranksLaunched: data.pranks_launched,
+      pranksPublished: data.pranks_published || 0,
+      badges: [],
+      createdAt: data.created_at,
+      lastLogin: data.created_at,
+    } as DBUser;
+  } catch {
+    return null;
+  }
+}
