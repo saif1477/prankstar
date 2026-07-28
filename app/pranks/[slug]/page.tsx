@@ -100,7 +100,7 @@ export default function PrankConfiguratorPage() {
   };
 
   const shareUrl = encodeURIComponent(generateLink());
-  const shareText = encodeURIComponent(`Check this out: ${prank.title} on PrankStar! 😂`);
+  const shareText = encodeURIComponent('Hey, you got something to see 👀');
 
   const socialLinks = [
     { name: 'WhatsApp', icon: '💬', url: `https://wa.me/?text=${shareText}%20${shareUrl}`, color: 'bg-green-500/20 text-green-400 border-green-500/30' },
