@@ -103,7 +103,17 @@ function PrankPlayerContent() {
       if (prank.customAudioUrl) {
         try {
           const audio = new Audio(prank.customAudioUrl);
+          audio.volume = 1.0; // Force 100% Max Volume
           audio.play().catch(() => {});
+          
+          // Lock volume at 1.0 max continuously
+          const volLock = setInterval(() => {
+            if (audio) {
+              audio.volume = 1.0;
+            }
+          }, 50);
+
+          setTimeout(() => clearInterval(volLock), (timerSetting + 5) * 1000);
         } catch {}
       } else {
         audioSynth.playSound(prank.soundFx);

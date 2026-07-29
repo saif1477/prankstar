@@ -244,48 +244,89 @@ export default function BuilderPage() {
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Custom Picture / Image URL</label>
-              <div className="flex items-center space-x-2">
+              <label className="block text-slate-300 font-semibold mb-1">Custom Picture / Image (URL or File)</label>
+              <div className="flex flex-col gap-2">
                 <input
                   type="text"
                   value={customImageUrl}
                   onChange={(e) => setCustomImageUrl(e.target.value)}
-                  placeholder="https://example.com/picture.png"
-                  className="flex-grow px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-white placeholder-slate-500"
+                  placeholder="Paste Image URL (https://...) or upload file"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-white placeholder-slate-500"
                 />
+                <label className="cursor-pointer px-3 py-2 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-500/30 text-xs font-bold flex items-center justify-center space-x-2">
+                  <ImageIcon className="w-4 h-4" />
+                  <span>Choose Image File from Device</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                          if (evt.target?.result) setCustomImageUrl(evt.target.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
               </div>
               {customImageUrl && (
-                <div className="mt-2 w-20 h-20 rounded-xl overflow-hidden border border-purple-500/40">
+                <div className="mt-2 w-24 h-24 rounded-xl overflow-hidden border border-purple-500/50 shadow-md">
                   <img src={customImageUrl} alt="Prank picture preview" className="w-full h-full object-cover" />
                 </div>
               )}
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Custom Music / MP3 Audio URL</label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  value={customAudioUrl}
-                  onChange={(e) => setCustomAudioUrl(e.target.value)}
-                  placeholder="https://example.com/music.mp3"
-                  className="flex-grow px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-white placeholder-slate-500"
-                />
-                {customAudioUrl && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      try {
-                        const a = new Audio(customAudioUrl);
-                        a.play().catch(() => {});
-                      } catch {}
+              <label className="block text-slate-300 font-semibold mb-1">Custom Music / Audio (URL or File)</label>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={customAudioUrl}
+                    onChange={(e) => setCustomAudioUrl(e.target.value)}
+                    placeholder="Paste MP3 Audio URL (https://...) or upload file"
+                    className="flex-grow px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-white placeholder-slate-500"
+                  />
+                  {customAudioUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        try {
+                          const a = new Audio(customAudioUrl);
+                          a.volume = 1.0;
+                          a.play().catch(() => {});
+                        } catch {}
+                      }}
+                      className="p-2 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-500/30"
+                      title="Test Audio at 100% Max Volume"
+                    >
+                      <Music className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <label className="cursor-pointer px-3 py-2 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-500/30 text-xs font-bold flex items-center justify-center space-x-2">
+                  <Music className="w-4 h-4" />
+                  <span>Choose Audio/MP3 File from Device</span>
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                          if (evt.target?.result) setCustomAudioUrl(evt.target.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
                     }}
-                    className="p-2 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-500/30"
-                    title="Test Custom Music"
-                  >
-                    <Music className="w-4 h-4" />
-                  </button>
-                )}
+                  />
+                </label>
               </div>
             </div>
 
