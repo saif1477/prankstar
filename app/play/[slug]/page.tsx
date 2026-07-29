@@ -94,6 +94,46 @@ function PrankPlayerContent() {
   const [copied, setCopied] = useState(false);
   const hasRecordedView = useRef(false);
 
+  // Interactive Typing Speed Prank State
+  const [typedInput, setTypedInput] = useState('');
+  const [typingWpm, setTypingWpm] = useState(0);
+  const [isShaking, setIsShaking] = useState(false);
+  const [typingStep, setTypingStep] = useState<'prompt' | 'typing' | 'overheat'>('prompt');
+  const [hackerLines, setHackerLines] = useState<string[]>([]);
+  const hasTriggeredTypingRef = useRef(false);
+
+  const handleUserTypingKey = () => {
+    audioSynth.playScanline();
+    setIsShaking(true);
+    setTypingStep('typing');
+
+    const mockLines = [
+      '#include <iostream>',
+      'void execute_speed_kernel() {',
+      '  for(int i=0; i<99999; ++i) {',
+      '    std::cout << "OVERCLOCK_BUFFER_0x" << std::hex << i;',
+      '  }',
+      '}',
+      '>>> MEMORY TEMPERATURE: 94.2°C (OVERHEATING)',
+      '>>> WARNING: CPU CORE 0 VOLTAGE SPIKE 1.48V',
+      '>>> CALCULATING WORDS PER SECOND...',
+    ];
+
+    setHackerLines((prev) => [...prev.slice(-5), mockLines[Math.floor(Math.random() * mockLines.length)]]);
+    setTypingWpm((prev) => (prev === 0 ? 142 : Math.min(prev + 55, 542)));
+
+    if (!hasTriggeredTypingRef.current) {
+      hasTriggeredTypingRef.current = true;
+      setTimeout(() => {
+        setTypingStep('overheat');
+        audioSynth.playSirenAlarm(2000);
+        setTimeout(() => {
+          triggerReveal();
+        }, 2200);
+      }, 3500);
+    }
+  };
+
   // Start simulation on user interaction or mount
   const handleStartPrank = () => {
     if (hasStarted) return;
@@ -414,8 +454,76 @@ function PrankPlayerContent() {
         </div>
       )}
 
+      {/* Interactive Speed Typing Test Simulation */}
+      {['hacker-typing-speed-test', 'hacker-typing-test', 'fake-terminal-sudo-rm-rf'].includes(slug) && (
+        <div className={`h-full bg-slate-950 text-cyan-400 font-mono p-6 sm:p-10 flex flex-col justify-between crt-effect select-none ${isShaking ? 'animate-shake' : ''}`}>
+          <div className="space-y-4 max-w-4xl mx-auto w-full">
+            <div className="flex items-center justify-between border-b border-cyan-500/30 pb-3">
+              <div className="flex items-center space-x-2">
+                <span className="text-xl">⌨️</span>
+                <h2 className="font-heading font-extrabold text-lg text-white">SPEED TYPING BENCHMARK v4.2</h2>
+              </div>
+              <span className={`px-3 py-1 rounded text-xs font-bold ${typingWpm > 300 ? 'bg-red-500 text-white animate-pulse' : 'bg-cyan-500/20 text-cyan-300'}`}>
+                {typingWpm > 0 ? `${typingWpm} WPM (OVERHEAT)` : 'READY TO TEST'}
+              </span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-900/90 border border-cyan-500/40 space-y-2">
+              <p className="text-xs text-slate-400 font-semibold">Instructions for {targetName}:</p>
+              <p className="text-sm text-slate-200">
+                Type the paragraph below into the text box as fast as possible to measure your Words Per Second:
+              </p>
+              <div className="p-3 rounded bg-black/60 border border-white/10 text-xs text-yellow-300 font-mono italic">
+                &quot;The quick brown fox jumps over the lazy dog and bypasses firewall security layer 9.&quot;
+              </div>
+            </div>
+
+            {/* Interactive Input Area */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-300">Type Here (Press Any Keys):</label>
+              <input
+                type="text"
+                autoFocus
+                value={typedInput}
+                onChange={(e) => {
+                  setTypedInput(e.target.value);
+                  handleUserTypingKey();
+                }}
+                onKeyDown={() => handleUserTypingKey()}
+                placeholder="Click here and start typing fast..."
+                className="w-full px-4 py-3 rounded-xl bg-black border-2 border-neon-cyan text-green-400 text-base font-mono focus:outline-none shadow-lg shadow-cyan-500/20"
+              />
+            </div>
+
+            {/* Auto Hacker Terminal Stream */}
+            {hackerLines.length > 0 && (
+              <div className="p-4 rounded-xl bg-black/90 border border-red-500/50 space-y-1 text-xs text-green-400 font-mono h-40 overflow-hidden shadow-inner">
+                <div className="text-[10px] text-red-400 font-bold mb-1">[AUTO-STREAMING HARDWARE KERNEL DATA]</div>
+                {hackerLines.map((line, idx) => (
+                  <div key={idx} className="flex items-center justify-between">
+                    <span>{line}</span>
+                    <span className="text-[10px] text-yellow-400">⚡ BUSY</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {typingStep === 'overheat' && (
+              <div className="p-4 rounded-xl bg-red-900/80 border-2 border-red-500 text-center animate-bounce space-y-1">
+                <div className="text-lg font-bold text-yellow-300">🔥 CRITICAL CPU OVERHEAT!</div>
+                <div className="text-xs text-white">Calculated Speed: 542.8 WPM! Keyboard Hardware Buffer Exhausted!</div>
+              </div>
+            )}
+          </div>
+
+          <div className="text-center text-[10px] text-slate-500 font-mono border-t border-slate-800 pt-3">
+            STATUS: MONITORING TYPING INPUT FREQUENCY &bull; {timeLeft}s SIMULATION TIME REMAINING
+          </div>
+        </div>
+      )}
+
       {/* Generic Dynamic Prank Player for All Other Pranks */}
-      {!['windows-11-bsod', 'matrix-hacker', 'fake-ransomware', 'pizza-delivery-tracker'].includes(slug) && (
+      {!['windows-11-bsod', 'matrix-hacker', 'fake-ransomware', 'pizza-delivery-tracker', 'hacker-typing-speed-test', 'hacker-typing-test', 'fake-terminal-sudo-rm-rf'].includes(slug) && (
         <div className="h-full bg-dark-900 text-white p-8 flex flex-col items-center justify-center text-center space-y-6 animate-blur-in">
           {prank.customImageUrl ? (
             <div className="w-full max-w-lg h-64 rounded-3xl overflow-hidden border-2 border-purple-500/50 shadow-2xl shadow-purple-500/20">
