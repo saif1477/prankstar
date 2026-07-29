@@ -8,7 +8,7 @@ import {
   Flag, X, Send, ThumbsUp, ExternalLink, Bookmark, QrCode,
   ChevronRight
 } from 'lucide-react';
-import { MASTER_PRANKS } from '@/lib/pranks-data';
+import { getAllPranksCombined, PrankTemplate } from '@/lib/pranks-data';
 import { getCurrentUser } from '@/lib/auth';
 import { getPrankStats, toggleLike, hasUserLiked, recordShare } from '@/lib/prank-stats';
 import { toggleFavoritePrank, getUserStats, addToHistory } from '@/lib/gamification';
@@ -21,7 +21,8 @@ export default function PrankConfiguratorPage() {
   const params = useParams();
   const router = useRouter();
   const slug = params?.slug as string;
-  const prank = MASTER_PRANKS.find((p) => p.slug === slug);
+  const allPranks = getAllPranksCombined();
+  const prank = allPranks.find((p) => p.slug === slug);
 
   const [targetName, setTargetName] = useState('');
   const [timer, setTimer] = useState(prank?.duration || 15);
@@ -133,7 +134,7 @@ export default function PrankConfiguratorPage() {
   };
 
   // Related pranks from same category
-  const relatedPranks = MASTER_PRANKS.filter(p => p.category === prank.category && p.slug !== slug).slice(0, 3);
+  const relatedPranks = allPranks.filter(p => p.category === prank?.category && p.slug !== slug).slice(0, 3);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10 page-fade-in">
@@ -242,7 +243,7 @@ export default function PrankConfiguratorPage() {
             <div className="font-heading font-extrabold text-xl text-white">Launch Prank Now</div>
             <div className="text-xs text-slate-400">Preview this prank in fullscreen</div>
           </Link>
-          <button onClick={() => { const randomPrank = MASTER_PRANKS[Math.floor(Math.random() * MASTER_PRANKS.length)]; router.push(`/pranks/${randomPrank.slug}`); }} className="w-full py-3 rounded-xl glass-card border border-white/10 hover:border-cyan-500/40 font-heading text-sm font-bold text-slate-300 hover:text-neon-cyan flex items-center justify-center space-x-2 transition-all">
+          <button onClick={() => { const randomPrank = allPranks[Math.floor(Math.random() * allPranks.length)]; router.push(`/pranks/${randomPrank.slug}`); }} className="w-full py-3 rounded-xl glass-card border border-white/10 hover:border-cyan-500/40 font-heading text-sm font-bold text-slate-300 hover:text-neon-cyan flex items-center justify-center space-x-2 transition-all">
             <span>🎲</span>
             <span>Random Prank</span>
           </button>

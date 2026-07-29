@@ -100,7 +100,14 @@ function PrankPlayerContent() {
     setHasStarted(true);
 
     if (audioEnabled && prank) {
-      audioSynth.playSound(prank.soundFx);
+      if (prank.customAudioUrl) {
+        try {
+          const audio = new Audio(prank.customAudioUrl);
+          audio.play().catch(() => {});
+        } catch {}
+      } else {
+        audioSynth.playSound(prank.soundFx);
+      }
     }
   };
 
@@ -400,9 +407,15 @@ function PrankPlayerContent() {
       {/* Generic Dynamic Prank Player for All Other Pranks */}
       {!['windows-11-bsod', 'matrix-hacker', 'fake-ransomware', 'pizza-delivery-tracker'].includes(slug) && (
         <div className="h-full bg-dark-900 text-white p-8 flex flex-col items-center justify-center text-center space-y-6 animate-blur-in">
-          <div className="w-28 h-28 rounded-full bg-purple-500/20 border-2 border-purple-500 flex items-center justify-center text-6xl animate-pulse pulse-ring">
-            {prank.thumbnail}
-          </div>
+          {prank.customImageUrl ? (
+            <div className="w-full max-w-lg h-64 rounded-3xl overflow-hidden border-2 border-purple-500/50 shadow-2xl shadow-purple-500/20">
+              <img src={prank.customImageUrl} alt={prank.title} className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-28 h-28 rounded-full bg-purple-500/20 border-2 border-purple-500 flex items-center justify-center text-6xl animate-pulse pulse-ring">
+              {prank.thumbnail}
+            </div>
+          )}
           <div className="space-y-2">
             <h1 className="text-3xl font-extrabold text-white font-heading">{prank.title}</h1>
             <p className="text-xs text-neon-cyan font-mono font-bold">Target: {targetName}</p>

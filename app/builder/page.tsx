@@ -16,9 +16,12 @@ import {
   Clock, 
   Eye, 
   Share2,
-  Sliders
+  Sliders,
+  Image as ImageIcon,
+  Music
 } from 'lucide-react';
 import { CustomPrank, CustomPrankStep, saveCustomPrank } from '@/lib/builder-store';
+import { PRANK_CATEGORIES } from '@/lib/pranks-data';
 import { audioSynth } from '@/lib/audio-synthesizer';
 import { addXP, unlockBadge } from '@/lib/gamification';
 import { publishPrankToDB } from '@/lib/db';
@@ -27,8 +30,11 @@ import { getCurrentUser } from '@/lib/auth';
 export default function BuilderPage() {
   const [prankTitle, setPrankTitle] = useState('My Custom Mega Prank');
   const [targetName, setTargetName] = useState('Alex');
+  const [category, setCategory] = useState<string>('Funny');
   const [timerDuration, setTimerDuration] = useState(10);
   const [soundFx, setSoundFx] = useState('sirenAlarm');
+  const [customImageUrl, setCustomImageUrl] = useState('');
+  const [customAudioUrl, setCustomAudioUrl] = useState('');
   const [bgTheme, setBgTheme] = useState('#050816');
   const [revealMessage, setRevealMessage] = useState('😂 You got PrankStar\'d!');
   const [speechText, setSpeechText] = useState('Warning! Autonomous system alert!');
@@ -94,9 +100,12 @@ export default function BuilderPage() {
       id: `custom-${Date.now()}`,
       title: prankTitle,
       slug: slug || `custom-${Date.now()}`,
+      category,
       targetName,
       timerDuration,
       soundFx,
+      customImageUrl: customImageUrl.trim() || undefined,
+      customAudioUrl: customAudioUrl.trim() || undefined,
       bgTheme,
       revealMessage,
       speechText,
@@ -108,19 +117,21 @@ export default function BuilderPage() {
 
     saveCustomPrank(newPrank);
 
-    // Publish into central DB accessible by all users
+    // Publish into central DB accessible by all users and Explore feed
     publishPrankToDB({
       title: prankTitle,
       slug: slug || `custom-${Date.now()}`,
       description: `User-created custom prank by ${authorName}`,
-      category: 'Interactive',
+      category: category || 'Funny',
       os: 'Cross-platform',
       difficulty: 'Easy',
       duration: timerDuration,
       thumbnail: '🎨',
       soundFx,
+      customImageUrl: customImageUrl.trim() || undefined,
+      customAudioUrl: customAudioUrl.trim() || undefined,
       revealMessage,
-      tags: ['custom', 'user-created', 'builder'],
+      tags: ['custom', 'user-created', 'builder', category.toLowerCase()],
       authorId,
       authorName,
       authorAvatar,
@@ -210,6 +221,19 @@ export default function BuilderPage() {
             </div>
 
             <div>
+              <label className="block text-slate-300 font-semibold mb-1">Prank Category</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-white"
+              >
+                {PRANK_CATEGORIES.filter(c => c !== 'All').map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="block text-slate-300 font-semibold mb-1">Target Name</label>
               <input
                 type="text"
@@ -217,6 +241,52 @@ export default function BuilderPage() {
                 onChange={(e) => setTargetName(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-white"
               />
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">Custom Picture / Image URL</label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={customImageUrl}
+                  onChange={(e) => setCustomImageUrl(e.target.value)}
+                  placeholder="https://example.com/picture.png"
+                  className="flex-grow px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-white placeholder-slate-500"
+                />
+              </div>
+              {customImageUrl && (
+                <div className="mt-2 w-20 h-20 rounded-xl overflow-hidden border border-purple-500/40">
+                  <img src={customImageUrl} alt="Prank picture preview" className="w-full h-full object-cover" />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">Custom Music / MP3 Audio URL</label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={customAudioUrl}
+                  onChange={(e) => setCustomAudioUrl(e.target.value)}
+                  placeholder="https://example.com/music.mp3"
+                  className="flex-grow px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-white placeholder-slate-500"
+                />
+                {customAudioUrl && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        const a = new Audio(customAudioUrl);
+                        a.play().catch(() => {});
+                      } catch {}
+                    }}
+                    className="p-2 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-500/30"
+                    title="Test Custom Music"
+                  >
+                    <Music className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
             <div>

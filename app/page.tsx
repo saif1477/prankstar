@@ -25,19 +25,20 @@ import {
   Award,
   Layers
 } from 'lucide-react';
-import { MASTER_PRANKS, PRANK_CATEGORIES, PrankTemplate } from '@/lib/pranks-data';
+import { getAllPranksCombined, PRANK_CATEGORIES, PrankTemplate } from '@/lib/pranks-data';
 import { audioSynth } from '@/lib/audio-synthesizer';
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [activeSoundId, setActiveSoundId] = useState<string | null>(null);
 
-  const featuredPranks = MASTER_PRANKS.filter((p) => p.isFeatured);
-  const trendingPranks = MASTER_PRANKS.filter((p) => p.isTrending);
+  const allPranks = getAllPranksCombined();
+  const featuredPranks = allPranks.filter((p) => p.isFeatured || p.tags.includes('custom'));
+  const trendingPranks = allPranks.filter((p) => p.isTrending || p.tags.includes('user-created'));
 
   const filteredPranks = selectedCategory === 'All'
-    ? MASTER_PRANKS
-    : MASTER_PRANKS.filter((p) => p.category === selectedCategory);
+    ? allPranks
+    : allPranks.filter((p) => p.category === selectedCategory);
 
   const playTestSound = (soundId: string) => {
     setActiveSoundId(soundId);

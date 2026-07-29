@@ -34,6 +34,8 @@ export interface PublishedPrank {
   duration: number;
   thumbnail: string;
   soundFx: string;
+  customImageUrl?: string;
+  customAudioUrl?: string;
   revealMessage: string;
   tags: string[];
   authorId: string;

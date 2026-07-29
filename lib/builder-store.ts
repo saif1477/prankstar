@@ -13,12 +13,14 @@ export interface CustomPrank {
   id: string;
   title: string;
   slug: string;
+  category?: string;
   targetName: string;
   timerDuration: number;
   soundFx: string;
   bgTheme: string;
   revealMessage: string;
   customImageUrl?: string;
+  customAudioUrl?: string;
   speechText?: string;
   steps: CustomPrankStep[];
   createdAt: string;

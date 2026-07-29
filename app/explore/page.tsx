@@ -17,7 +17,7 @@ import {
   Grid,
   LayoutGrid
 } from 'lucide-react';
-import { MASTER_PRANKS, PRANK_CATEGORIES, OS_FILTERS, DIFFICULTY_FILTERS, SORT_OPTIONS } from '@/lib/pranks-data';
+import { getAllPranksCombined, PRANK_CATEGORIES, OS_FILTERS, DIFFICULTY_FILTERS, SORT_OPTIONS, PrankTemplate } from '@/lib/pranks-data';
 import { getCurrentUser } from '@/lib/auth';
 import { getPrankStats, toggleLike, hasUserLiked, recordShare } from '@/lib/prank-stats';
 
@@ -33,15 +33,18 @@ export default function ExplorePage() {
   const [liveStats, setLiveStats] = useState<Record<string, { views: number; likes: number; shares: number }>>({});
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [userId, setUserId] = useState<string>('guest');
+  const [allPranks, setAllPranks] = useState<PrankTemplate[]>([]);
 
   useEffect(() => {
+    const pranks = getAllPranksCombined();
+    setAllPranks(pranks);
     const user = getCurrentUser();
     const uid = user?.id || 'guest';
     setUserId(uid);
 
     const statsMap: Record<string, { views: number; likes: number; shares: number }> = {};
     const liked = new Set<string>();
-    MASTER_PRANKS.forEach((p) => {
+    pranks.forEach((p) => {
       const s = getPrankStats(p.slug);
       statsMap[p.slug] = { views: p.views + s.views, likes: p.likes + s.likes, shares: p.shares + s.shares };
       if (hasUserLiked(p.slug, uid)) liked.add(p.slug);
@@ -53,7 +56,7 @@ export default function ExplorePage() {
   const getStats = (slug: string) => liveStats[slug] || { views: 0, likes: 0, shares: 0 };
 
   const filteredPranks = useMemo(() => {
-    return MASTER_PRANKS.filter((p) => {
+    return allPranks.filter((p) => {
       const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -70,16 +73,17 @@ export default function ExplorePage() {
       if (sortBy === 'shares') return sb.shares - sa.shares;
       return sb.views - sa.views;
     });
-  }, [searchQuery, selectedCategory, selectedOS, selectedDifficulty, sortBy, liveStats]);
+  }, [allPranks, searchQuery, selectedCategory, selectedOS, selectedDifficulty, sortBy, liveStats]);
 
   const handleLike = (slug: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const result = toggleLike(slug, userId);
-    const prank = MASTER_PRANKS.find(p => p.slug === slug)!;
+    const prank = allPranks.find(p => p.slug === slug);
+    const baseLikes = prank?.likes || 0;
     setLiveStats((prev) => ({
       ...prev,
-      [slug]: { ...prev[slug], likes: prank.likes + result.stats.likes }
+      [slug]: { ...prev[slug], likes: baseLikes + result.stats.likes }
     }));
     setLikedSlugs((prev) => {
       const next = new Set(prev);
@@ -94,11 +98,12 @@ export default function ExplorePage() {
     const url = `${window.location.origin}/pranks/${slug}`;
     navigator.clipboard.writeText(url);
     recordShare(slug);
-    const prank = MASTER_PRANKS.find(p => p.slug === slug)!;
+    const prank = allPranks.find(p => p.slug === slug);
+    const baseShares = prank?.shares || 0;
     const s = getPrankStats(slug);
     setLiveStats((prev) => ({
       ...prev,
-      [slug]: { ...prev[slug], shares: prank.shares + s.shares }
+      [slug]: { ...prev[slug], shares: baseShares + s.shares }
     }));
     setCopiedSlug(slug);
     setTimeout(() => setCopiedSlug(null), 2000);
@@ -110,7 +115,7 @@ export default function ExplorePage() {
       <div className="space-y-3">
         <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-500/20 text-neon-purple text-xs font-semibold">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Interactive Prank Library ({MASTER_PRANKS.length}+ Simulations)</span>
+          <span>Interactive Prank Library ({allPranks.length}+ Simulations)</span>
         </div>
         <h1 className="font-heading font-extrabold text-3xl sm:text-5xl text-white tracking-tight">
           Explore Prank Catalog

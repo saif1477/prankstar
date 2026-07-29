@@ -1,3 +1,6 @@
+import { getPublishedPranks } from './db';
+import { getCustomPranks } from './builder-store';
+
 export interface PrankTemplate {
   id: string;
   title: string;
@@ -9,6 +12,8 @@ export interface PrankTemplate {
   duration: number; // in seconds
   thumbnail: string;
   soundFx: string; // key for sound synthesizer
+  customImageUrl?: string;
+  customAudioUrl?: string;
   revealMessage: string;
   tags: string[];
   views: number;
@@ -880,3 +885,55 @@ export const SOUND_STUDIO_TRACKS = [
   { id: 'heartbeat', name: 'Heartbeat Pulse', type: 'Sub Bass', desc: 'Tension building heartbeat' },
   { id: 'scanline', name: 'CRT Scanline Buzz', type: 'Oscillator', desc: 'Old TV static and scan' }
 ];
+
+export function getAllPranksCombined(): PrankTemplate[] {
+  const published = getPublishedPranks();
+  const custom = getCustomPranks();
+
+  const publishedAsTemplates: PrankTemplate[] = published.map((p) => ({
+    id: p.id,
+    title: p.title,
+    slug: p.slug,
+    description: p.description,
+    category: p.category || 'Custom',
+    os: p.os || 'Cross-platform',
+    difficulty: p.difficulty || 'Easy',
+    duration: p.duration || 15,
+    thumbnail: p.thumbnail || '🎭',
+    soundFx: p.soundFx || 'sirenAlarm',
+    customImageUrl: p.customImageUrl,
+    customAudioUrl: p.customAudioUrl,
+    revealMessage: p.revealMessage,
+    tags: p.tags || ['custom'],
+    views: p.views || 0,
+    likes: p.likes || 0,
+    shares: p.shares || 0,
+    createdAt: p.createdAt,
+  }));
+
+  const customAsTemplates: PrankTemplate[] = custom
+    .filter((c) => !published.some((pub) => pub.slug === c.slug))
+    .map((c) => ({
+      id: c.id,
+      title: c.title,
+      slug: c.slug,
+      description: `Custom prank created by ${c.author}`,
+      category: c.category || 'Custom',
+      os: 'Cross-platform',
+      difficulty: 'Medium',
+      duration: c.timerDuration || 15,
+      thumbnail: '⚡',
+      soundFx: c.soundFx || 'sirenAlarm',
+      customImageUrl: c.customImageUrl,
+      customAudioUrl: c.customAudioUrl,
+      revealMessage: c.revealMessage,
+      tags: ['custom', 'user-created'],
+      views: 120,
+      likes: c.likes || 0,
+      shares: 15,
+      createdAt: c.createdAt,
+    }));
+
+  // Merge built-in master pranks + published pranks + custom pranks
+  return [...MASTER_PRANKS, ...publishedAsTemplates, ...customAsTemplates];
+}
