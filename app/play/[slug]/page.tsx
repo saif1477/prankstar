@@ -141,20 +141,56 @@ function PrankPlayerContent() {
       setMatrixText((prev) => [...prev.slice(-12), matrixLogs[Math.floor(Math.random() * matrixLogs.length)]]);
     }, 1200);
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' || e.key === ' ') {
-        triggerReveal();
+    // Trap browser back button so victim cannot navigate away during active prank
+    window.history.pushState(null, '', window.location.href);
+    const handlePopState = () => {
+      if (!isRevealed) {
+        window.history.pushState(null, '', window.location.href);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
+
+    // Block keyboard shortcuts, escape, backspace, refresh, and navigation keys
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isRevealed) {
+        // Prevent all back/exit/refresh keys while prank is in progress
+        if (
+          e.key === 'Escape' ||
+          e.key === 'Backspace' ||
+          e.key === 'F5' ||
+          e.key === 'F11' ||
+          e.key === 'Tab' ||
+          (e.ctrlKey && (e.key === 'r' || e.key === 'R' || e.key === 'w' || e.key === 'W')) ||
+          (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight'))
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }
+    };
+
+    // Warn if victim attempts to reload or close tab
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!isRevealed) {
+        e.preventDefault();
+        e.returnValue = 'Prank simulation in progress!';
+        return 'Prank simulation in progress!';
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('keydown', handleKeyDown, true);
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       clearInterval(timerInterval);
       clearInterval(percentInterval);
       clearInterval(matrixInterval);
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [prank]);
+  }, [prank, isRevealed]);
 
   const triggerReveal = () => {
     if (isRevealed) return;
