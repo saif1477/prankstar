@@ -455,7 +455,7 @@ function PrankPlayerContent() {
       )}
 
       {/* Interactive Speed Typing Test Simulation */}
-      {['hacker-typing-speed-test', 'hacker-typing-test', 'fake-terminal-sudo-rm-rf'].includes(slug) && (
+      {(['hacker-typing-speed', 'hacker-typing-speed-test', 'hacker-typing-test', 'fake-terminal-sudo-rm-rf'].includes(slug) || slug.includes('typing')) && (
         <div className={`h-full bg-slate-950 text-cyan-400 font-mono p-6 sm:p-10 flex flex-col justify-between crt-effect select-none ${isShaking ? 'animate-shake' : ''}`}>
           <div className="space-y-4 max-w-4xl mx-auto w-full">
             <div className="flex items-center justify-between border-b border-cyan-500/30 pb-3">
@@ -523,7 +523,7 @@ function PrankPlayerContent() {
       )}
 
       {/* Generic Dynamic Prank Player for All Other Pranks */}
-      {!['windows-11-bsod', 'matrix-hacker', 'fake-ransomware', 'pizza-delivery-tracker', 'hacker-typing-speed-test', 'hacker-typing-test', 'fake-terminal-sudo-rm-rf'].includes(slug) && (
+      {!['windows-11-bsod', 'matrix-hacker', 'fake-ransomware', 'pizza-delivery-tracker', 'hacker-typing-speed', 'hacker-typing-speed-test', 'hacker-typing-test', 'fake-terminal-sudo-rm-rf'].includes(slug) && !slug.includes('typing') && (
         <div className="h-full bg-dark-900 text-white p-8 flex flex-col items-center justify-center text-center space-y-6 animate-blur-in">
           {prank.customImageUrl ? (
             <div className="w-full max-w-lg h-64 rounded-3xl overflow-hidden border-2 border-purple-500/50 shadow-2xl shadow-purple-500/20">
