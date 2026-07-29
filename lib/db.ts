@@ -80,6 +80,7 @@ export function findUserByEmail(email: string): DBUser | undefined {
  * Register User & Immediately Push to Supabase Table `users`
  */
 export function registerUserInDB(data: {
+  id?: string;
   email: string;
   displayName: string;
   avatar?: string;
@@ -98,13 +99,14 @@ export function registerUserInDB(data: {
 
   const avatars = ['😎', '🎭', '🤡', '👻', '🦊', '🐱', '🚀', '⚡', '🔥', '💜'];
   const newUser: DBUser = {
-    id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: data.id || `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     email: data.email,
     displayName: data.displayName,
     avatar: data.avatar || avatars[Math.floor(Math.random() * avatars.length)],
     provider: data.provider,
     password: data.password,
-    isAdmin: data.isAdmin || data.email.toLowerCase().includes('admin'),
+    // Privileges must be assigned by a trusted server/admin workflow, never by an email string.
+    isAdmin: data.isAdmin === true,
     xp: 0, // Everyone starts from 0 XP!
     level: 1,
     pranksLaunched: 0,
@@ -183,7 +185,7 @@ export function publishPrankToDB(prankData: Omit<PublishedPrank, 'id' | 'created
   const pranks = getPublishedPranks();
   const newPrank: PublishedPrank = {
     ...prankData,
-    id: `prk_${Date.now()}`,
+    id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `prk_${Date.now()}_${Math.random().toString(36).slice(2)}`,
     views: 0,
     likes: 0,
     shares: 0,

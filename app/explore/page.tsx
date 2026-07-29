@@ -17,7 +17,8 @@ import {
   Grid,
   LayoutGrid
 } from 'lucide-react';
-import { getAllPranksCombined, PRANK_CATEGORIES, OS_FILTERS, DIFFICULTY_FILTERS, SORT_OPTIONS, PrankTemplate } from '@/lib/pranks-data';
+import { getAllPranksCombined, mergePrankCatalog, PRANK_CATEGORIES, OS_FILTERS, DIFFICULTY_FILTERS, SORT_OPTIONS, PrankTemplate } from '@/lib/pranks-data';
+import { fetchPublishedPranksFromSupabase } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth';
 import { getPrankStats, toggleLike, hasUserLiked, recordShare } from '@/lib/prank-stats';
 
@@ -36,7 +37,12 @@ export default function ExplorePage() {
   const [allPranks, setAllPranks] = useState<PrankTemplate[]>([]);
 
   useEffect(() => {
-    const pranks = getAllPranksCombined();
+    let active = true;
+    const loadPranks = async () => {
+      const localPranks = getAllPranksCombined();
+      const remotePranks = await fetchPublishedPranksFromSupabase();
+      if (!active) return;
+      const pranks = mergePrankCatalog(localPranks, remotePranks);
     setAllPranks(pranks);
     const user = getCurrentUser();
     const uid = user?.id || 'guest';
@@ -51,6 +57,9 @@ export default function ExplorePage() {
     });
     setLiveStats(statsMap);
     setLikedSlugs(liked);
+    };
+    void loadPranks();
+    return () => { active = false; };
   }, []);
 
   const getStats = (slug: string) => liveStats[slug] || { views: 0, likes: 0, shares: 0 };

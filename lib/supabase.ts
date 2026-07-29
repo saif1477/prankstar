@@ -82,7 +82,10 @@ export async function syncPrankToSupabase(prank: PublishedPrank) {
       duration: prank.duration,
       thumbnail: prank.thumbnail,
       sound_fx: prank.soundFx,
+      custom_image_url: prank.customImageUrl,
+      custom_audio_url: prank.customAudioUrl,
       reveal_message: prank.revealMessage,
+      tags: prank.tags,
       author_id: prank.authorId,
       author_name: prank.authorName,
       author_avatar: prank.authorAvatar,
@@ -96,6 +99,30 @@ export async function syncPrankToSupabase(prank: PublishedPrank) {
   } catch (err) {
     console.warn('Supabase offline or unconfigured.');
     return null;
+  }
+}
+
+/** Load the public catalogue from the shared store.  The local cache is only
+ * a fallback; it must not be the source of truth for a multi-device feed. */
+export async function fetchPublishedPranksFromSupabase(): Promise<PublishedPrank[]> {
+  try {
+    const { data, error } = await supabase
+      .from('published_pranks')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error || !data) return [];
+    return data.map((p) => ({
+      id: p.id, title: p.title, slug: p.slug, description: p.description || '',
+      category: p.category, os: p.os || 'Cross-platform', difficulty: p.difficulty || 'Easy',
+      duration: p.duration || 15, thumbnail: p.thumbnail || '🎭', soundFx: p.sound_fx || 'sirenAlarm',
+      customImageUrl: p.custom_image_url, customAudioUrl: p.custom_audio_url,
+      revealMessage: p.reveal_message || 'You got PrankStar\'d!', tags: p.tags || ['custom'],
+      authorId: p.author_id, authorName: p.author_name || 'PrankStar creator',
+      authorAvatar: p.author_avatar || '🎭', views: p.views || 0, likes: p.likes || 0,
+      shares: p.shares || 0, createdAt: p.created_at, status: p.status || 'published',
+    })) as PublishedPrank[];
+  } catch {
+    return [];
   }
 }
 

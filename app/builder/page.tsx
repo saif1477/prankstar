@@ -92,8 +92,12 @@ export default function BuilderPage() {
   const handleSavePrank = () => {
     const slug = prankTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const user = getCurrentUser();
-    const authorId = user?.id || 'guest';
-    const authorName = user?.displayName || 'Anonymous Creator';
+    if (!user) {
+      window.alert('Please sign in before publishing. This keeps the public feed accountable and available across devices.');
+      return;
+    }
+    const authorId = user.id;
+    const authorName = user.displayName;
     const authorAvatar = user?.avatar || '🎭';
 
     const newPrank: CustomPrank = {

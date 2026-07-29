@@ -5,6 +5,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { MASTER_PRANKS, PrankTemplate } from '@/lib/pranks-data';
 import { getPublishedPranks } from '@/lib/db';
+import { fetchPublishedPranksFromSupabase } from '@/lib/supabase';
 import { getCustomPranks } from '@/lib/builder-store';
 import { audioSynth } from '@/lib/audio-synthesizer';
 import { addXP, unlockBadge, incrementPranksLaunched } from '@/lib/gamification';
@@ -26,12 +27,15 @@ function PrankPlayerContent() {
   const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
+    let active = true;
+    const resolvePrank = async () => {
     // 1. Try master pranks
     let found = MASTER_PRANKS.find((p) => p.slug === slug);
 
     // 2. Try published DB pranks
     if (!found) {
-      const pub = getPublishedPranks().find((p) => p.slug === slug);
+      const remotePranks = await fetchPublishedPranksFromSupabase();
+      const pub = remotePranks.find((p) => p.slug === slug) || getPublishedPranks().find((p) => p.slug === slug);
       if (pub) {
         found = {
           id: pub.id,
@@ -78,7 +82,10 @@ function PrankPlayerContent() {
     }
 
     // Fallback to first master prank if not found
-    setPrank(found || MASTER_PRANKS[0]);
+    if (active) setPrank(found || MASTER_PRANKS[0]);
+    };
+    void resolvePrank();
+    return () => { active = false; };
   }, [slug]);
 
   const targetName = searchParams.get('name') || 'Friend';
@@ -90,7 +97,6 @@ function PrankPlayerContent() {
   const [isRevealed, setIsRevealed] = useState(false);
   const [percent, setPercent] = useState(0);
   const [matrixText, setMatrixText] = useState<string[]>([]);
-  const [crackedOverlay, setCrackedOverlay] = useState(false);
   const [copied, setCopied] = useState(false);
   const hasRecordedView = useRef(false);
 
@@ -143,17 +149,9 @@ function PrankPlayerContent() {
       if (prank.customAudioUrl) {
         try {
           const audio = new Audio(prank.customAudioUrl);
-          audio.volume = 1.0; // Force 100% Max Volume
+          audio.volume = 0.65;
           audio.play().catch(() => {});
           
-          // Lock volume at 1.0 max continuously
-          const volLock = setInterval(() => {
-            if (audio) {
-              audio.volume = 1.0;
-            }
-          }, 50);
-
-          setTimeout(() => clearInterval(volLock), (timerSetting + 5) * 1000);
         } catch {}
       } else {
         audioSynth.playSound(prank.soundFx);
@@ -198,54 +196,10 @@ function PrankPlayerContent() {
       setMatrixText((prev) => [...prev.slice(-12), matrixLogs[Math.floor(Math.random() * matrixLogs.length)]]);
     }, 1200);
 
-    // Trap browser back button so victim cannot navigate away during active prank
-    window.history.pushState(null, '', window.location.href);
-    const handlePopState = () => {
-      if (!isRevealed) {
-        window.history.pushState(null, '', window.location.href);
-      }
-    };
-
-    // Block keyboard shortcuts, escape, backspace, refresh, and navigation keys
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isRevealed) {
-        // Prevent all back/exit/refresh keys while prank is in progress
-        if (
-          e.key === 'Escape' ||
-          e.key === 'Backspace' ||
-          e.key === 'F5' ||
-          e.key === 'F11' ||
-          e.key === 'Tab' ||
-          (e.ctrlKey && (e.key === 'r' || e.key === 'R' || e.key === 'w' || e.key === 'W')) ||
-          (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight'))
-        ) {
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
-        }
-      }
-    };
-
-    // Warn if victim attempts to reload or close tab
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (!isRevealed) {
-        e.preventDefault();
-        e.returnValue = 'Prank simulation in progress!';
-        return 'Prank simulation in progress!';
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    window.addEventListener('keydown', handleKeyDown, true);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
     return () => {
       clearInterval(timerInterval);
       clearInterval(percentInterval);
       clearInterval(matrixInterval);
-      window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener('keydown', handleKeyDown, true);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [prank, isRevealed]);
 
@@ -281,10 +235,6 @@ function PrankPlayerContent() {
 
   const handleTouchShatter = () => {
     handleStartPrank();
-    setCrackedOverlay(true);
-    if (audioEnabled) {
-      audioSynth.playSound('glassShatter');
-    }
   };
 
   const handleCopyLink = () => {
@@ -361,12 +311,6 @@ function PrankPlayerContent() {
           </button>
         )}
       </div>
-
-      {crackedOverlay && (
-        <div className="absolute inset-0 pointer-events-none z-40 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-white/5 to-white/10 border-4 border-red-500/50 crt-effect">
-          <div className="absolute top-1/3 left-1/4 text-6xl opacity-30 select-none font-mono">💥 CRACKED</div>
-        </div>
-      )}
 
       {/* BSOD Simulation */}
       {slug === 'windows-11-bsod' && (
@@ -561,7 +505,7 @@ function PrankPlayerContent() {
       )}
 
       {/* CEO Promotion Email */}
-      {slug === 'promotion-email-ceo' && (
+      {['promotion-email-ceo', 'ceo-promotion-email'].includes(slug) && (
         <div className="h-full bg-slate-950 text-slate-100 p-8 flex flex-col justify-between font-sans">
           <div className="space-y-4 max-w-3xl mx-auto w-full mt-4">
             <div className="p-4 rounded-xl bg-slate-900 border border-white/10 space-y-3">
@@ -601,7 +545,7 @@ function PrankPlayerContent() {
       )}
 
       {/* Android System Update Loop */}
-      {slug === 'android-system-update-loop' && (
+      {['android-system-update-loop', 'android-update-loop'].includes(slug) && (
         <div className="h-full bg-black text-white p-8 flex flex-col items-center justify-center text-center space-y-8 font-sans">
           <div className="w-24 h-24 rounded-full border-4 border-cyan-500 border-t-transparent animate-spin flex items-center justify-center text-4xl">
             🤖
@@ -705,7 +649,7 @@ function PrankPlayerContent() {
       )}
 
       {/* Browser Memory Leak 99% */}
-      {slug === 'browser-memory-leak-99' && (
+      {['browser-memory-leak-99', 'browser-memory-leak'].includes(slug) && (
         <div className="h-full bg-slate-950 text-white p-8 flex flex-col items-center justify-center text-center space-y-6 font-sans">
           <div className="text-7xl animate-bounce">⚠️</div>
           <div className="p-6 rounded-2xl bg-red-950/90 border-2 border-red-500 max-w-md w-full space-y-3">
@@ -795,7 +739,7 @@ function PrankPlayerContent() {
       )}
 
       {/* Fake Windows Loading Bar */}
-      {slug === 'fake-windows-loading-bar' && (
+      {['fake-windows-loading-bar', 'fake-windows-loading'].includes(slug) && (
         <div className="h-full bg-[#0078d4] text-white p-8 flex flex-col items-center justify-center text-center space-y-6 font-sans">
           <div className="w-16 h-16 rounded-full border-4 border-white border-t-transparent animate-spin mx-auto" />
           <div className="space-y-2">
@@ -806,8 +750,25 @@ function PrankPlayerContent() {
         </div>
       )}
 
+      {/* Everyday notification simulations: familiar but deliberately low-stakes. */}
+      {slug === 'calendar-meeting-moved' && (
+        <div className="h-full bg-slate-100 text-slate-900 p-5 sm:p-10 flex items-center justify-center font-sans"><div className="w-full max-w-2xl rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden"><div className="px-6 py-4 border-b border-slate-200 flex justify-between"><b>Calendar</b><span className="text-xs text-slate-500">Today</span></div><div className="p-6 sm:p-8 space-y-6"><div><p className="text-sm text-slate-500">Updated invitation</p><h1 className="text-2xl font-bold mt-1">Friday catch-up</h1><p className="text-sm text-slate-600 mt-2">Organized for {targetName}</p></div><div className="rounded-xl bg-blue-50 border border-blue-100 p-4 flex gap-4"><div className="text-center border-r border-blue-200 pr-4"><p className="text-xs font-semibold text-blue-600">FRI</p><p className="text-2xl font-bold">18</p></div><div><p className="font-semibold">3:30 PM - 4:00 PM</p><p className="text-sm text-slate-600">Moved from 2:30 PM</p></div></div><p className="text-sm text-slate-600">A quick shift so everyone can make it. See you then!</p></div></div></div>
+      )}
+
+      {slug === 'wifi-signin-required' && (
+        <div className="h-full bg-slate-50 text-slate-900 p-5 flex items-center justify-center font-sans"><div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-xl p-7 space-y-6"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center text-xl">⌁</div><div><h1 className="font-bold">Guest Wi-Fi</h1><p className="text-xs text-slate-500">Network sign-in required</p></div></div><div className="border-y border-slate-100 py-5 space-y-2"><p className="text-sm font-medium">Welcome back, {targetName}</p><p className="text-sm text-slate-600">Accept the guest-network terms to connect securely.</p></div><button className="w-full rounded-xl bg-cyan-600 py-3 text-sm font-semibold text-white">Continue to internet</button><p className="text-center text-[11px] text-slate-400">This network does not collect passwords or payment details.</p></div></div>
+      )}
+
+      {slug === 'storage-cleanup-suggestion' && (
+        <div className="h-full bg-slate-950 text-white p-5 sm:p-10 flex items-center justify-center font-sans"><div className="w-full max-w-xl rounded-3xl bg-slate-900 border border-white/10 p-6 sm:p-8 space-y-6"><div><p className="text-xs text-slate-400">Device care</p><h1 className="text-2xl font-bold mt-1">Storage suggestions</h1></div><div className="rounded-2xl bg-amber-400/10 border border-amber-300/20 p-5"><div className="flex justify-between text-sm"><span>Storage used</span><span className="font-semibold text-amber-300">82 GB of 128 GB</span></div><div className="h-2 mt-3 rounded-full bg-slate-700 overflow-hidden"><div className="h-full w-[64%] bg-amber-400 rounded-full" /></div></div><div className="rounded-2xl bg-white/5 border border-white/10 p-4 flex items-center justify-between"><div><p className="font-semibold text-sm">Review duplicate screenshots</p><p className="text-xs text-slate-400 mt-1">46 items, about 680 MB</p></div><button className="rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold">Review</button></div><p className="text-xs text-slate-500">Nothing will be removed without your approval.</p></div></div>
+      )}
+
+      {slug === 'package-arriving-early' && (
+        <div className="h-full bg-orange-50 text-slate-900 p-5 sm:p-10 flex items-center justify-center font-sans"><div className="w-full max-w-xl rounded-2xl bg-white border border-orange-100 shadow-xl overflow-hidden"><div className="h-2 bg-orange-500" /><div className="p-7 space-y-6"><div className="flex items-center justify-between"><div><p className="text-xs text-slate-500">Delivery update</p><h1 className="text-2xl font-bold">Your package is arriving early</h1></div><span className="text-3xl">📦</span></div><div className="rounded-xl bg-orange-50 border border-orange-100 p-4"><p className="text-sm font-semibold text-green-700">Out for delivery</p><p className="text-sm text-slate-600 mt-1">Expected today between 2:00 PM and 4:00 PM</p></div><div className="flex items-center gap-2 text-xs text-slate-500"><span className="w-2.5 h-2.5 rounded-full bg-green-500" /> Delivery preferences are unchanged for {targetName}.</div></div></div></div>
+      )}
+
       {/* Generic Dynamic Prank Player for All Other Pranks */}
-      {!['windows-11-bsod', 'matrix-hacker', 'fake-ransomware', 'pizza-delivery-tracker', 'hacker-typing-speed', 'hacker-typing-speed-test', 'hacker-typing-test', 'fake-terminal-sudo-rm-rf', 'ghost-camera-jumpscare', 'exam-cancelled-alert', 'promotion-email-ceo', 'birthday-surprise-countdown', 'android-system-update-loop', 'iphone-icloud-lock', 'fortnite-vbucks-generator', 'tiktok-account-deleted', 'movie-credits-roll', 'webcam-hacker-detected', 'browser-memory-leak-99', 'youtube-copyright-strike', 'slack-everyone-emergency', 'friend-zone-alert', 'countdown-self-destruct', 'fake-windows-loading-bar'].includes(slug) && !slug.includes('typing') && (
+      {!['windows-11-bsod', 'matrix-hacker', 'fake-ransomware', 'pizza-delivery-tracker', 'hacker-typing-speed', 'hacker-typing-speed-test', 'hacker-typing-test', 'fake-terminal-sudo-rm-rf', 'ghost-camera-jumpscare', 'exam-cancelled-alert', 'promotion-email-ceo', 'ceo-promotion-email', 'birthday-surprise-countdown', 'android-system-update-loop', 'android-update-loop', 'iphone-icloud-lock', 'fortnite-vbucks-generator', 'tiktok-account-deleted', 'movie-credits-roll', 'webcam-hacker-detected', 'browser-memory-leak-99', 'browser-memory-leak', 'youtube-copyright-strike', 'slack-everyone-emergency', 'friend-zone-alert', 'countdown-self-destruct', 'fake-windows-loading-bar', 'fake-windows-loading', 'calendar-meeting-moved', 'wifi-signin-required', 'storage-cleanup-suggestion', 'package-arriving-early'].includes(slug) && !slug.includes('typing') && (
         <div className="h-full bg-dark-900 text-white p-8 flex flex-col items-center justify-center text-center space-y-6 animate-blur-in">
           {prank.customImageUrl ? (
             <div className="w-full max-w-lg h-64 rounded-3xl overflow-hidden border-2 border-purple-500/50 shadow-2xl shadow-purple-500/20">

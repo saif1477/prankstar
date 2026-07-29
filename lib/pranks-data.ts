@@ -1,4 +1,4 @@
-import { getPublishedPranks } from './db';
+import { getPublishedPranks, PublishedPrank } from './db';
 import { getCustomPranks } from './builder-store';
 
 export interface PrankTemplate {
@@ -865,6 +865,34 @@ export const MASTER_PRANKS: PrankTemplate[] = [
     isTrending: true,
     previewColor: '#10b981',
     iconName: 'Keyboard'
+  },
+  {
+    id: 'prank-calendar-reschedule', title: 'Calendar Meeting Moved', slug: 'calendar-meeting-moved',
+    description: 'A tidy calendar update showing a casual meeting moved to a different time, with a short note from the organizer.',
+    category: 'Office', os: 'Cross-platform', difficulty: 'Easy', duration: 12, thumbnail: '📅', soundFx: 'notificationChime',
+    revealMessage: 'Your calendar is unchanged. That meeting move was only a tiny prank!', tags: ['calendar', 'meeting', 'office', 'schedule', 'notification'],
+    views: 0, likes: 0, shares: 0, isFeatured: true, isTrending: true, previewColor: '#2563eb', iconName: 'CalendarClock'
+  },
+  {
+    id: 'prank-wifi-signin', title: 'Wi-Fi Sign-in Required', slug: 'wifi-signin-required',
+    description: 'A familiar network sign-in page that looks like a routine coffee-shop Wi-Fi prompt and ends with a friendly reveal.',
+    category: 'Browser', os: 'Cross-platform', difficulty: 'Easy', duration: 10, thumbnail: '📶', soundFx: 'notificationChime',
+    revealMessage: 'The Wi-Fi is fine. You only signed in to a prank!', tags: ['wifi', 'browser', 'network', 'sign-in', 'cafe'],
+    views: 0, likes: 0, shares: 0, isFeatured: false, isTrending: true, previewColor: '#0891b2', iconName: 'Wifi'
+  },
+  {
+    id: 'prank-storage-cleanup', title: 'Storage Cleanup Suggestion', slug: 'storage-cleanup-suggestion',
+    description: 'A believable device-storage panel suggesting duplicate screenshots to review. Nothing is deleted or changed.',
+    category: 'Phone', os: 'Cross-platform', difficulty: 'Easy', duration: 12, thumbnail: '🗂️', soundFx: 'notificationChime',
+    revealMessage: 'No files were touched. Your storage is exactly as you left it!', tags: ['storage', 'phone', 'cleanup', 'photos', 'files'],
+    views: 0, likes: 0, shares: 0, isFeatured: false, isTrending: false, previewColor: '#f59e0b', iconName: 'FolderOpen'
+  },
+  {
+    id: 'prank-delivery-window', title: 'Package Arriving Early', slug: 'package-arriving-early',
+    description: 'A clean delivery-status screen showing a harmless surprise package arriving earlier than expected.',
+    category: 'Funny', os: 'Cross-platform', difficulty: 'Easy', duration: 12, thumbnail: '📦', soundFx: 'notificationChime',
+    revealMessage: 'No mystery package is on the way. Just a well-timed prank!', tags: ['delivery', 'package', 'tracker', 'notification', 'surprise'],
+    views: 0, likes: 0, shares: 0, isFeatured: true, isTrending: true, previewColor: '#ea580c', iconName: 'PackageCheck'
   }
 ];
 
@@ -936,4 +964,17 @@ export function getAllPranksCombined(): PrankTemplate[] {
 
   // Merge built-in master pranks + published pranks + custom pranks
   return [...MASTER_PRANKS, ...publishedAsTemplates, ...customAsTemplates];
+}
+
+export function mergePrankCatalog(local: PrankTemplate[], remote: PublishedPrank[]): PrankTemplate[] {
+  const remoteTemplates = remote.map((p) => ({
+    id: p.id, title: p.title, slug: p.slug, description: p.description, category: p.category,
+    os: p.os, difficulty: p.difficulty, duration: p.duration, thumbnail: p.thumbnail,
+    soundFx: p.soundFx, customImageUrl: p.customImageUrl, customAudioUrl: p.customAudioUrl,
+    revealMessage: p.revealMessage, tags: p.tags || ['custom'], views: p.views,
+    likes: p.likes, shares: p.shares, createdAt: p.createdAt,
+  }));
+  const merged = new Map(local.map((prank) => [prank.slug, prank]));
+  remoteTemplates.forEach((prank) => merged.set(prank.slug, prank));
+  return Array.from(merged.values());
 }

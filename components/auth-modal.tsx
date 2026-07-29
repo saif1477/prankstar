@@ -20,13 +20,13 @@ export default function AuthModal({ isOpen, onClose, onAuth }: AuthModalProps) {
 
   if (!isOpen) return null;
 
-  const handleEmailAuth = () => {
+  const handleEmailAuth = async () => {
     setError(null);
     setLoading(true);
 
-    setTimeout(() => {
+    try {
       if (mode === 'login') {
-        const result = loginWithEmail(email, password);
+        const result = await loginWithEmail(email, password);
         if (result.success && result.user) {
           onAuth(result.user);
           resetAndClose();
@@ -34,7 +34,7 @@ export default function AuthModal({ isOpen, onClose, onAuth }: AuthModalProps) {
           setError(result.error || 'Login failed.');
         }
       } else {
-        const result = registerWithEmail(email, password, displayName);
+        const result = await registerWithEmail(email, password, displayName);
         if (result.success && result.user) {
           onAuth(result.user);
           resetAndClose();
@@ -42,8 +42,9 @@ export default function AuthModal({ isOpen, onClose, onAuth }: AuthModalProps) {
           setError(result.error || 'Registration failed.');
         }
       }
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   const resetAndClose = () => {
@@ -161,6 +162,9 @@ export default function AuthModal({ isOpen, onClose, onAuth }: AuthModalProps) {
               </p>
             )}
           </div>
+          <p className="text-center text-[11px] text-slate-500">
+            Use the same email on your phone to access your account there.
+          </p>
         </div>
       </div>
     </div>
