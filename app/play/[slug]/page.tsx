@@ -767,8 +767,277 @@ function PrankPlayerContent() {
         <div className="h-full bg-orange-50 text-slate-900 p-5 sm:p-10 flex items-center justify-center font-sans"><div className="w-full max-w-xl rounded-2xl bg-white border border-orange-100 shadow-xl overflow-hidden"><div className="h-2 bg-orange-500" /><div className="p-7 space-y-6"><div className="flex items-center justify-between"><div><p className="text-xs text-slate-500">Delivery update</p><h1 className="text-2xl font-bold">Your package is arriving early</h1></div><span className="text-3xl">📦</span></div><div className="rounded-xl bg-orange-50 border border-orange-100 p-4"><p className="text-sm font-semibold text-green-700">Out for delivery</p><p className="text-sm text-slate-600 mt-1">Expected today between 2:00 PM and 4:00 PM</p></div><div className="flex items-center gap-2 text-xs text-slate-500"><span className="w-2.5 h-2.5 rounded-full bg-green-500" /> Delivery preferences are unchanged for {targetName}.</div></div></div></div>
       )}
 
+      {/* Bank Account $1 Billion Glitch */}
+      {slug === 'bank-balance-glitch' && (
+        <div className="h-full bg-slate-950 text-white p-6 sm:p-10 flex flex-col justify-between font-sans select-none">
+          <div className="max-w-2xl mx-auto w-full space-y-6">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xl border border-emerald-500/30">🏦</div>
+                <div>
+                  <h1 className="font-heading font-extrabold text-lg text-white">CHASE PRIVATE WEALTH</h1>
+                  <p className="text-xs text-slate-400">Account holder: {targetName}</p>
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/40">ACTIVE VIP</span>
+            </div>
+
+            <div className="p-8 rounded-3xl bg-gradient-to-br from-emerald-950/60 via-slate-900 to-slate-950 border-2 border-emerald-500/40 shadow-2xl shadow-emerald-500/10 space-y-2 text-center">
+              <p className="text-xs text-emerald-400 font-mono tracking-wider font-semibold">TOTAL CHECKING BALANCE</p>
+              <div className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-green-200 to-teal-200 font-mono tracking-tight">
+                $1,245,892,100.00
+              </div>
+              <p className="text-[11px] text-slate-400 mt-2">Available for immediate wire withdrawal: <span className="text-white font-bold">$1.24 Billion</span></p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-900 border border-white/10 space-y-3">
+              <div className="flex justify-between items-center text-xs text-slate-400 font-semibold border-b border-slate-800 pb-2">
+                <span>RECENT TRANSACTIONS</span>
+                <span className="text-emerald-400">CLEARED</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <div>
+                  <p className="font-bold text-white">Wire: Swiss Private Reserve Trust #941</p>
+                  <p className="text-[10px] text-slate-500">Ref: SWIFT/BIC #CH-849102-GENEVA</p>
+                </div>
+                <span className="font-mono font-bold text-emerald-400 text-sm">+$1,245,892,100.00</span>
+              </div>
+            </div>
+          </div>
+          <div className="text-center text-[10px] text-slate-500 font-mono">FEDERAL RESERVE CLEARINGHOUSE CODE #9412 &bull; FDIC INSURED</div>
+        </div>
+      )}
+
+      {/* FBI Cyber Most Wanted Red Notice */}
+      {slug === 'fbi-most-wanted-alert' && (
+        <div className="h-full bg-slate-950 text-red-500 font-mono p-6 sm:p-10 flex flex-col justify-between crt-effect select-none">
+          <div className="max-w-2xl mx-auto w-full space-y-5 text-center my-auto">
+            <div className="w-20 h-20 rounded-full bg-red-600/20 border-2 border-red-600 flex items-center justify-center text-4xl mx-auto animate-pulse">
+              🚨
+            </div>
+            <div className="space-y-1">
+              <div className="px-4 py-1 rounded bg-red-600 text-white font-extrabold text-xs inline-block tracking-widest animate-pulse">
+                FEDERAL BUREAU OF INVESTIGATION // U.S. DEPARTMENT OF JUSTICE
+              </div>
+              <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-wider mt-2">CYBER CRIME SEIZURE NOTICE</h1>
+              <p className="text-xs text-red-400">WARRANT ID: #DOJ-CYBER-9841-FED</p>
+            </div>
+            <div className="p-5 rounded-2xl bg-black/90 border-2 border-red-600 text-xs text-slate-300 space-y-2 text-left shadow-2xl shadow-red-600/20">
+              <p><span className="text-red-400 font-bold">TARGET SUBJECT:</span> {targetName.toUpperCase()}</p>
+              <p><span className="text-red-400 font-bold">PHYSICAL IP:</span> 192.168.1.1 (GEOLOCATED &amp; LOCKED)</p>
+              <p><span className="text-red-400 font-bold">WEBCAM LOG:</span> 4K LIVE STREAMING TO QUANTICO HQ</p>
+              <p className="text-yellow-400 font-bold text-[11px] pt-2 border-t border-red-900">
+                ⚠️ NOTICE: Local Tactical SWAT Units have been dispatched to your physical GPS coordinates. Remain seated.
+              </p>
+            </div>
+          </div>
+          <div className="text-center text-[10px] text-red-600 font-mono animate-ping">FEDERAL SURVEILLANCE ACTIVE &bull; TIME: {timeLeft}s</div>
+        </div>
+      )}
+
+      {/* Critical Battery Explosion */}
+      {slug === 'battery-explosion-overheat' && (
+        <div className={`h-full bg-black text-white p-6 sm:p-10 flex flex-col justify-between font-sans select-none ${isShaking ? 'animate-shake' : ''}`}>
+          <div className="max-w-md mx-auto w-full space-y-6 text-center my-auto">
+            <div className="w-24 h-24 rounded-full bg-red-600/30 border-4 border-red-500 flex items-center justify-center text-5xl mx-auto animate-ping">
+              🔥
+            </div>
+            <div className="space-y-2">
+              <div className="px-3 py-1 rounded-full bg-red-600 text-white font-extrabold text-xs inline-block tracking-wider animate-pulse">
+                CRITICAL HARDWARE WARNING
+              </div>
+              <h1 className="text-3xl font-extrabold text-red-500 tracking-tight">BATTERY THERMAL RUNAWAY!</h1>
+              <p className="text-sm text-yellow-300 font-mono font-bold">INTERNAL CORE TEMPERATURE: 98.6°C</p>
+            </div>
+            <div className="p-6 rounded-3xl bg-red-950/80 border-2 border-red-500 space-y-3">
+              <div className="w-full h-4 rounded-full bg-slate-900 border border-white/20 overflow-hidden">
+                <div className="h-full bg-red-500 w-[99%] animate-pulse" />
+              </div>
+              <p className="text-xs text-slate-200 font-bold leading-relaxed">
+                🚨 DROP AND MOVE AWAY FROM THIS DEVICE IMMEDIATELY TO PREVENT LITHIUM CELL RUPTURE!
+              </p>
+            </div>
+          </div>
+          <div className="text-center text-xs text-red-500 font-mono font-bold">EMERGENCY SHUTDOWN FAILURE &bull; {timeLeft}s REMAINING</div>
+        </div>
+      )}
+
+      {/* Celebrity Video Call */}
+      {slug === 'celebrity-video-call' && (
+        <div className="h-full bg-gradient-to-b from-slate-900 via-slate-950 to-black text-white p-8 flex flex-col justify-between font-sans select-none">
+          <div className="text-center pt-8 space-y-2">
+            <p className="text-xs text-slate-400 uppercase tracking-widest font-mono">FaceTime Video Call...</p>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading">Elon Musk 🚀</h1>
+            <p className="text-xs text-cyan-400">Calling {targetName} for urgent SpaceX Starship advice</p>
+          </div>
+          <div className="w-40 h-40 rounded-full bg-blue-500/20 border-4 border-cyan-400 mx-auto flex items-center justify-center text-7xl shadow-2xl shadow-cyan-500/30 animate-pulse">
+            👨‍🚀
+          </div>
+          <div className="flex justify-center items-center gap-12 pb-12">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center text-2xl shadow-lg cursor-pointer hover:scale-110 transition-transform">
+                📵
+              </div>
+              <span className="text-xs text-slate-400">Decline</span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-2xl shadow-lg shadow-green-500/40 animate-bounce cursor-pointer hover:scale-110 transition-transform">
+                📞
+              </div>
+              <span className="text-xs text-green-400 font-bold">Accept Call</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deepfake AI Voice Cloner */}
+      {slug === 'ai-voice-cloner-leak' && (
+        <div className="h-full bg-slate-950 text-purple-400 font-mono p-6 sm:p-10 flex flex-col justify-between crt-effect select-none">
+          <div className="max-w-2xl mx-auto w-full space-y-6 my-auto">
+            <div className="flex justify-between items-center border-b border-purple-500/40 pb-3">
+              <div className="flex items-center space-x-2">
+                <span className="text-2xl">🤖</span>
+                <h1 className="font-heading font-extrabold text-white text-base">OPENAI DEEPFAKE NEURAL VOICE CLONER v5.1</h1>
+              </div>
+              <span className="px-3 py-1 rounded bg-purple-500/20 text-purple-300 text-xs font-bold animate-pulse">MIC LIVE</span>
+            </div>
+            <div className="p-6 rounded-3xl bg-purple-950/40 border-2 border-purple-500/50 space-y-4 text-center">
+              <p className="text-xs text-slate-300 font-semibold">Extracting vocal DNA waveforms for: <span className="text-white font-bold">{targetName}</span></p>
+              <div className="flex justify-center items-center gap-1.5 h-16">
+                {[40, 80, 60, 95, 30, 70, 90, 45, 85, 65, 90, 50, 75].map((h, i) => (
+                  <div key={i} className="w-2 bg-gradient-to-t from-purple-600 to-cyan-400 rounded-full animate-pulse" style={{ height: `${h}%`, animationDelay: `${i * 80}ms` }} />
+                ))}
+              </div>
+              <p className="text-xs text-cyan-300 font-mono font-bold">SYNTHESIS STATUS: 94.8% &bull; GENERATING DEEPFAKE SPEECH AUDIO</p>
+            </div>
+          </div>
+          <div className="text-center text-[10px] text-slate-500 font-mono">NEURAL AUDIO EXTRACTION ENGINE &bull; {timeLeft}s REMAINING</div>
+        </div>
+      )}
+
+      {/* Spider on Camera Lens */}
+      {slug === 'cracked-camera-lens-spider' && (
+        <div className="h-full bg-black text-white p-6 flex flex-col justify-between select-none relative overflow-hidden">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="text-9xl animate-bounce transform rotate-45 select-none opacity-90 drop-shadow-2xl">
+              🕷️
+            </div>
+          </div>
+          <div className="relative z-10 flex justify-between items-center text-xs font-mono text-slate-400">
+            <span>OPTICAL SENSOR #4</span>
+            <span className="text-red-500 font-bold animate-pulse">FOREIGN ENTITY ON LENS</span>
+          </div>
+          <div className="relative z-10 text-center space-y-2 bg-black/70 p-4 rounded-2xl border border-white/10 max-w-sm mx-auto">
+            <h2 className="text-lg font-bold text-white">TAP SCREEN TO SCARE IT AWAY</h2>
+            <p className="text-xs text-slate-400">Do not let it crawl inside the glass bezel!</p>
+          </div>
+        </div>
+      )}
+
+      {/* Netflix Account Hijacked */}
+      {slug === 'netflix-account-hijacked' && (
+        <div className="h-full bg-black text-white p-6 sm:p-10 flex flex-col justify-between font-sans select-none">
+          <div className="max-w-xl mx-auto w-full space-y-6 my-auto">
+            <div className="text-red-600 font-extrabold text-4xl tracking-tighter">NETFLIX</div>
+            <div className="p-6 rounded-3xl bg-zinc-900 border border-zinc-800 space-y-4">
+              <div className="space-y-1">
+                <span className="px-2.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold">SECURITY ALERT</span>
+                <h1 className="text-xl font-bold text-white">New devices streaming on your account</h1>
+              </div>
+              <p className="text-xs text-zinc-300 leading-relaxed">
+                Hi {targetName}, your Netflix Premium Ultra HD subscription was just accessed simultaneously on <span className="text-white font-bold">14 Smart TVs in Moscow, Russia</span> streaming Shrek 2.
+              </p>
+              <div className="p-3 rounded-xl bg-black/60 border border-white/5 text-xs text-zinc-400 space-y-1">
+                <p>📍 Location: Moscow, Russian Federation</p>
+                <p>📺 Device: Samsung 85&quot; QLED TV</p>
+                <p>⚡ Simultaneous Streams: 14 / 4 Max</p>
+              </div>
+              <button disabled className="w-full py-3 rounded-xl bg-red-600 text-white font-bold text-xs">Sign Out All 14 Devices</button>
+            </div>
+          </div>
+          <div className="text-center text-[10px] text-zinc-600">NETFLIX SECURITY PROTOCOL v2026</div>
+        </div>
+      )}
+
+      {/* MetaMask Crypto Drained */}
+      {slug === 'crypto-wallet-drained' && (
+        <div className="h-full bg-zinc-950 text-white p-6 sm:p-10 flex flex-col justify-between font-sans select-none">
+          <div className="max-w-md mx-auto w-full space-y-6 my-auto">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <div className="flex items-center space-x-2">
+                <span className="text-2xl">🦊</span>
+                <span className="font-bold text-sm">MetaMask Wallet</span>
+              </div>
+              <span className="text-xs text-orange-400 font-mono">Ethereum Mainnet</span>
+            </div>
+            <div className="p-6 rounded-3xl bg-zinc-900 border border-red-500/50 space-y-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center text-xl mx-auto border border-red-500/30">
+                ↗️
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-red-400 font-bold font-mono">OUTGOING TRANSACTION CONFIRMED</p>
+                <h1 className="text-3xl font-extrabold text-white font-mono">-12.5000 ETH</h1>
+                <p className="text-xs text-zinc-400">≈ $42,500.00 USD</p>
+              </div>
+              <div className="p-3 rounded-xl bg-black/60 text-[11px] text-zinc-400 text-left font-mono space-y-1">
+                <p>To: 0x7a250d...659F2488D</p>
+                <p>Gas Fee: 0.012 ETH ($42.10)</p>
+                <p>Status: Broadcasating to 8,421 Nodes...</p>
+              </div>
+            </div>
+          </div>
+          <div className="text-center text-[10px] text-zinc-600 font-mono">ETHEREUM BLOCK #19842102 &bull; NONCE: 481</div>
+        </div>
+      )}
+
+      {/* iOS Beta Bootloop */}
+      {slug === 'fake-ios-software-update-stuck' && (
+        <div className="h-full bg-black text-white p-8 flex flex-col items-center justify-center text-center space-y-8 font-sans select-none">
+          <div className="text-7xl"></div>
+          <div className="w-64 space-y-3">
+            <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+              <div className="h-full bg-white w-[2%] animate-pulse" />
+            </div>
+            <p className="text-xs text-zinc-400 font-light">Estimating time remaining... 48 hours remaining</p>
+            <p className="text-[10px] text-zinc-600">iOS 19.0 Developer Beta Recovery Update</p>
+          </div>
+        </div>
+      )}
+
+      {/* Lottery Jackpot Winner */}
+      {slug === 'lottery-jackpot-winner' && (
+        <div className="h-full bg-gradient-to-b from-amber-950 via-slate-950 to-black text-white p-6 sm:p-10 flex flex-col justify-between font-sans select-none">
+          <div className="max-w-2xl mx-auto w-full space-y-6 text-center my-auto">
+            <div className="text-5xl animate-bounce">🌟 🎟️ 🌟</div>
+            <div className="space-y-2">
+              <div className="px-4 py-1 rounded-full bg-amber-500 text-black font-extrabold text-xs inline-block tracking-wider">
+                OFFICIAL LOTTERY COMMISSION
+              </div>
+              <h1 className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">
+                JACKPOT WINNER: $750,000,000!
+              </h1>
+              <p className="text-sm text-amber-200">Ticket Holder Verified: <span className="font-bold text-white">{targetName}</span></p>
+            </div>
+            <div className="p-6 rounded-3xl bg-black/80 border-2 border-amber-400 space-y-4">
+              <p className="text-xs text-amber-300 font-mono font-semibold">MATCHED ALL 6 WINNING BALLS:</p>
+              <div className="flex justify-center items-center gap-2 sm:gap-3">
+                {['07', '14', '21', '33', '42'].map((num) => (
+                  <div key={num} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white text-black font-extrabold text-sm sm:text-base flex items-center justify-center shadow-lg">
+                    {num}
+                  </div>
+                ))}
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-amber-500 text-black font-extrabold text-sm sm:text-base flex items-center justify-center shadow-lg shadow-amber-500/50">
+                  10
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="text-center text-[10px] text-amber-500 font-mono">TICKET BARCODE #9481-2041-7729 &bull; CLAIM DEADLINE: 180 DAYS</div>
+        </div>
+      )}
+
       {/* Generic Dynamic Prank Player for All Other Pranks */}
-      {!['windows-11-bsod', 'matrix-hacker', 'fake-ransomware', 'pizza-delivery-tracker', 'hacker-typing-speed', 'hacker-typing-speed-test', 'hacker-typing-test', 'fake-terminal-sudo-rm-rf', 'ghost-camera-jumpscare', 'exam-cancelled-alert', 'promotion-email-ceo', 'ceo-promotion-email', 'birthday-surprise-countdown', 'android-system-update-loop', 'android-update-loop', 'iphone-icloud-lock', 'fortnite-vbucks-generator', 'tiktok-account-deleted', 'movie-credits-roll', 'webcam-hacker-detected', 'browser-memory-leak-99', 'browser-memory-leak', 'youtube-copyright-strike', 'slack-everyone-emergency', 'friend-zone-alert', 'countdown-self-destruct', 'fake-windows-loading-bar', 'fake-windows-loading', 'calendar-meeting-moved', 'wifi-signin-required', 'storage-cleanup-suggestion', 'package-arriving-early'].includes(slug) && !slug.includes('typing') && (
+      {!['windows-11-bsod', 'matrix-hacker', 'fake-ransomware', 'pizza-delivery-tracker', 'hacker-typing-speed', 'hacker-typing-speed-test', 'hacker-typing-test', 'fake-terminal-sudo-rm-rf', 'ghost-camera-jumpscare', 'exam-cancelled-alert', 'promotion-email-ceo', 'ceo-promotion-email', 'birthday-surprise-countdown', 'android-system-update-loop', 'android-update-loop', 'iphone-icloud-lock', 'fortnite-vbucks-generator', 'tiktok-account-deleted', 'movie-credits-roll', 'webcam-hacker-detected', 'browser-memory-leak-99', 'browser-memory-leak', 'youtube-copyright-strike', 'slack-everyone-emergency', 'friend-zone-alert', 'countdown-self-destruct', 'fake-windows-loading-bar', 'fake-windows-loading', 'calendar-meeting-moved', 'wifi-signin-required', 'storage-cleanup-suggestion', 'package-arriving-early', 'bank-balance-glitch', 'fbi-most-wanted-alert', 'battery-explosion-overheat', 'celebrity-video-call', 'ai-voice-cloner-leak', 'cracked-camera-lens-spider', 'netflix-account-hijacked', 'crypto-wallet-drained', 'fake-ios-software-update-stuck', 'lottery-jackpot-winner'].includes(slug) && !slug.includes('typing') && (
         <div className="h-full bg-dark-900 text-white p-8 flex flex-col items-center justify-center text-center space-y-6 animate-blur-in">
           {prank.customImageUrl ? (
             <div className="w-full max-w-lg h-64 rounded-3xl overflow-hidden border-2 border-purple-500/50 shadow-2xl shadow-purple-500/20">
