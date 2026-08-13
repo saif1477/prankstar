@@ -10,9 +10,8 @@ import { getCustomPranks } from '@/lib/builder-store';
 import { audioSynth } from '@/lib/audio-synthesizer';
 import { addXP, unlockBadge, incrementPranksLaunched } from '@/lib/gamification';
 import { recordView } from '@/lib/prank-stats';
-import { getCurrentUser } from '@/lib/auth';
 import { 
-  X, Play, Share2, Home, ShieldAlert, Check, Volume2, Sparkles
+  Play, Share2, Home, Check
 } from 'lucide-react';
 
 function PrankPlayerContent() {
@@ -29,60 +28,60 @@ function PrankPlayerContent() {
   useEffect(() => {
     let active = true;
     const resolvePrank = async () => {
-    // 1. Try master pranks
-    let found = MASTER_PRANKS.find((p) => p.slug === slug);
+      // 1. Try master pranks
+      let found = MASTER_PRANKS.find((p) => p.slug === slug);
 
-    // 2. Try published DB pranks
-    if (!found) {
-      const remotePranks = await fetchPublishedPranksFromSupabase();
-      const pub = remotePranks.find((p) => p.slug === slug) || getPublishedPranks().find((p) => p.slug === slug);
-      if (pub) {
-        found = {
-          id: pub.id,
-          title: pub.title,
-          slug: pub.slug,
-          description: pub.description,
-          category: pub.category,
-          os: pub.os,
-          difficulty: pub.difficulty,
-          duration: pub.duration,
-          thumbnail: pub.thumbnail,
-          soundFx: pub.soundFx,
-          revealMessage: pub.revealMessage,
-          tags: pub.tags || ['custom'],
-          views: pub.views,
-          likes: pub.likes,
-          shares: pub.shares,
-        };
+      // 2. Try published DB pranks
+      if (!found) {
+        const remotePranks = await fetchPublishedPranksFromSupabase();
+        const pub = remotePranks.find((p) => p.slug === slug) || getPublishedPranks().find((p) => p.slug === slug);
+        if (pub) {
+          found = {
+            id: pub.id,
+            title: pub.title,
+            slug: pub.slug,
+            description: pub.description,
+            category: pub.category,
+            os: pub.os,
+            difficulty: pub.difficulty,
+            duration: pub.duration,
+            thumbnail: pub.thumbnail,
+            soundFx: pub.soundFx,
+            revealMessage: pub.revealMessage,
+            tags: pub.tags || ['custom'],
+            views: pub.views,
+            likes: pub.likes,
+            shares: pub.shares,
+          };
+        }
       }
-    }
 
-    // 3. Try custom builder pranks
-    if (!found) {
-      const cust = getCustomPranks().find((p) => p.slug === slug);
-      if (cust) {
-        found = {
-          id: cust.id,
-          title: cust.title,
-          slug: cust.slug,
-          description: `Custom Prank by ${cust.author}`,
-          category: 'Interactive',
-          os: 'Cross-platform',
-          difficulty: 'Easy',
-          duration: cust.timerDuration || 15,
-          thumbnail: '🎨',
-          soundFx: cust.soundFx || 'sirenAlarm',
-          revealMessage: cust.revealMessage || 'You got PrankStar\'d!',
-          tags: ['custom'],
-          views: 100,
-          likes: cust.likes || 1,
-          shares: 5,
-        };
+      // 3. Try custom builder pranks
+      if (!found) {
+        const cust = getCustomPranks().find((p) => p.slug === slug);
+        if (cust) {
+          found = {
+            id: cust.id,
+            title: cust.title,
+            slug: cust.slug,
+            description: `Custom Prank by ${cust.author}`,
+            category: 'Interactive',
+            os: 'Cross-platform',
+            difficulty: 'Easy',
+            duration: cust.timerDuration || 15,
+            thumbnail: '🎨',
+            soundFx: cust.soundFx || 'sirenAlarm',
+            revealMessage: cust.revealMessage || 'You got PrankStar\'d!',
+            tags: ['custom'],
+            views: 100,
+            likes: cust.likes || 1,
+            shares: 5,
+          };
+        }
       }
-    }
 
-    // Fallback to first master prank if not found
-    if (active) setPrank(found || MASTER_PRANKS[0]);
+      // Fallback to first master prank if not found
+      if (active) setPrank(found || MASTER_PRANKS[0]);
     };
     void resolvePrank();
     return () => { active = false; };
@@ -101,16 +100,81 @@ function PrankPlayerContent() {
   const hasRecordedView = useRef(false);
 
   // Interactive Typing Speed Prank State
-  const [typedInput, setTypedInput] = useState('');
-  const [typingWpm, setTypingWpm] = useState(0);
-  const [isShaking, setIsShaking] = useState(false);
   const [typingStep, setTypingStep] = useState<'prompt' | 'typing' | 'overheat'>('prompt');
   const [hackerLines, setHackerLines] = useState<string[]>([]);
   const hasTriggeredTypingRef = useRef(false);
 
+  // Interactive Screen Crack Touch Count
+  const [crackCount, setCrackCount] = useState(1);
+
+  // 1. Trap Browser Navigation, Back Buttons, Mobile Edge Swipes & Keyboard Shortcuts
+  useEffect(() => {
+    if (isRevealed) return;
+
+    // Push state continuously to prevent navigating back
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = (e: PopStateEvent) => {
+      if (!isRevealed) {
+        window.history.pushState(null, '', window.location.href);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+
+    // Prevent leaving or closing page
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!isRevealed) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Block keyboard navigation shortcuts
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isRevealed) {
+        if (
+          e.key === 'Escape' ||
+          e.key === 'Backspace' ||
+          (e.altKey && e.key === 'ArrowLeft') ||
+          e.key === 'F5' ||
+          (e.ctrlKey && (e.key === 'r' || e.key === 'w'))
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+
+    // Block mobile left-edge swipe back
+    const handleTouchStart = (e: TouchEvent) => {
+      if (!isRevealed && e.touches[0] && e.touches[0].clientX < 45) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('touchstart', handleTouchStart, { passive: false });
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('touchstart', handleTouchStart);
+    };
+  }, [isRevealed]);
+
+  // 2. Lock Volume to Maximum (100%) and Unmute Continuously
+  useEffect(() => {
+    if (isRevealed) return;
+    const volumeLock = setInterval(() => {
+      audioSynth.forceMaxVolume();
+    }, 30);
+    return () => clearInterval(volumeLock);
+  }, [isRevealed]);
+
   const handleUserTypingKey = () => {
     audioSynth.playScanline();
-    setIsShaking(true);
     setTypingStep('typing');
 
     const mockLines = [
@@ -126,7 +190,6 @@ function PrankPlayerContent() {
     ];
 
     setHackerLines((prev) => [...prev.slice(-5), mockLines[Math.floor(Math.random() * mockLines.length)]]);
-    setTypingWpm((prev) => (prev === 0 ? 142 : Math.min(prev + 55, 542)));
 
     if (!hasTriggeredTypingRef.current) {
       hasTriggeredTypingRef.current = true;
@@ -142,6 +205,7 @@ function PrankPlayerContent() {
 
   // Start simulation on user interaction or mount
   const handleStartPrank = () => {
+    audioSynth.forceMaxVolume();
     if (hasStarted) return;
     setHasStarted(true);
 
@@ -149,9 +213,9 @@ function PrankPlayerContent() {
       if (prank.customAudioUrl) {
         try {
           const audio = new Audio(prank.customAudioUrl);
-          audio.volume = 0.65;
+          audio.volume = 1.0;
+          audio.muted = false;
           audio.play().catch(() => {});
-          
         } catch {}
       } else {
         audioSynth.playSound(prank.soundFx);
@@ -235,6 +299,7 @@ function PrankPlayerContent() {
 
   const handleTouchShatter = () => {
     handleStartPrank();
+    setCrackCount((prev) => prev + 1);
   };
 
   const handleCopyLink = () => {
@@ -247,7 +312,7 @@ function PrankPlayerContent() {
 
   if (isRevealed) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-dark-900/95 backdrop-blur-2xl text-center page-fade-in">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-dark-900/95 backdrop-blur-2xl text-center page-fade-in select-none">
         <div className="max-w-lg w-full p-8 rounded-3xl glass-card border border-purple-500/50 shadow-2xl shadow-purple-500/30 space-y-6">
           <div className="w-24 h-24 mx-auto rounded-full bg-purple-500/20 border border-purple-500 flex items-center justify-center text-5xl animate-bounce">
             😂
@@ -299,238 +364,445 @@ function PrankPlayerContent() {
       onClick={handleTouchShatter}
       className="fixed inset-0 z-[90] bg-black text-white flex flex-col justify-between p-6 select-none overflow-hidden cursor-pointer"
     >
-      {/* Top Bar */}
-      <div className="absolute top-4 right-4 z-50 flex items-center space-x-3">
-        {!hasStarted && (
-          <button
-            onClick={(e) => { e.stopPropagation(); handleStartPrank(); }}
-            className="px-4 py-2 rounded-full bg-neon-purple text-white text-xs font-bold flex items-center space-x-1.5 shadow-lg animate-pulse"
-          >
-            <Volume2 className="w-4 h-4" />
-            <span>Click to Enable Audio</span>
-          </button>
-        )}
-      </div>
-
-      {/* BSOD Simulation */}
+      {/* 1. Windows 11 BSOD */}
       {slug === 'windows-11-bsod' && (
-        <div className="h-full bg-[#0078d4] text-white p-12 flex flex-col justify-between font-sans">
-          <div className="space-y-6 max-w-4xl mt-12">
+        <div className="h-full flex flex-col justify-between font-sans text-white p-8 sm:p-16 bg-[#0078d7]">
+          <div className="space-y-6 max-w-3xl">
             <div className="text-8xl font-light">:(</div>
-            <h1 className="text-3xl font-light leading-snug">
+            <h1 className="text-2xl sm:text-4xl font-normal leading-relaxed">
               Your PC ran into a problem and needs to restart. We&apos;re just collecting some error info, and then we&apos;ll restart for you.
             </h1>
             <div className="text-2xl font-light">{percent}% complete</div>
           </div>
-          <div className="flex items-center space-x-6">
-            <div className="w-24 h-24 bg-white p-2 shrink-0">
-              <div className="w-full h-full border-2 border-black flex items-center justify-center font-mono text-[10px] text-black font-bold">QR CODE</div>
+
+          <div className="flex items-end space-x-6">
+            <div className="w-28 h-28 bg-white p-2 shrink-0">
+              <div className="w-full h-full border-4 border-black flex items-center justify-center font-mono text-[9px] text-black font-bold text-center">
+                QR CODE<br />ERROR
+              </div>
             </div>
-            <div className="text-xs space-y-1 text-slate-100 font-mono">
+            <div className="space-y-1 text-xs sm:text-sm font-light">
               <p>For more information about this issue and possible fixes, visit https://windows.com/stopcode</p>
               <p>If you call a support person, give them this info:</p>
-              <p>Stop code: CRITICAL_PROCESS_DIED</p>
-              <p>What failed: {targetName.toUpperCase()}_SYSTEM_CORE.SYS</p>
+              <p className="font-bold">Stop code: CRITICAL_PROCESS_DIED</p>
+              <p className="font-bold">What failed: ntoskrnl.exe</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Matrix Hacker Terminal */}
+      {/* 2. Matrix Cyber Hacker */}
       {slug === 'matrix-hacker' && (
-        <div className="h-full bg-black text-green-400 font-mono p-8 flex flex-col justify-between crt-effect">
-          <div className="space-y-3">
-            <div className="text-xl font-bold border-b border-green-500/40 pb-2 flex items-center justify-between">
-              <span>SYSTEM BREACH TERMINAL // TARGET: {targetName.toUpperCase()}</span>
-              <span className="animate-pulse text-xs bg-green-400 text-black px-2 py-0.5 font-bold">LIVE HACK</span>
+        <div className="h-full flex flex-col justify-between font-mono text-neon-green p-6 bg-black crt-effect">
+          <div className="flex items-center justify-between border-b border-green-500/30 pb-3">
+            <div className="flex items-center space-x-2">
+              <span className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
+              <span className="font-bold text-sm">CYBER_BREACH_V4.2.1 // ROOT ACCESS</span>
             </div>
-            <div className="space-y-1 text-sm text-green-400/90">
-              {matrixText.map((line, idx) => (
-                <div key={idx}>{line}</div>
-              ))}
+            <div className="text-xs text-green-400">TARGET: {targetName.toUpperCase()}</div>
+          </div>
+
+          <div className="space-y-2 text-xs sm:text-sm overflow-hidden my-auto py-4">
+            {matrixText.map((line, idx) => (
+              <div key={idx} className="animate-fade-in font-mono">
+                {line}
+              </div>
+            ))}
+            <div className="text-green-300 font-bold animate-pulse">
+              &gt; OVERRIDING LOCAL OPERATING SYSTEM MEMORY... [{percent}%]
             </div>
           </div>
-          <div className="border border-green-500/30 p-4 rounded bg-green-500/10 text-xs font-mono space-y-1">
-            <p className="font-bold text-white">COMMAND EXECUTION STATUS: 100% COMPLETE</p>
-            <p>Target identity encrypted. Extracted 4,291 photos from camera roll.</p>
+
+          <div className="border-t border-green-500/30 pt-3 flex justify-between items-center text-xs">
+            <span>INFILTRATION LEVEL: CRITICAL</span>
+            <span>TIME TO HARD LOCK: {timeLeft}s</span>
           </div>
         </div>
       )}
 
-      {/* Fake Ransomware */}
+      {/* 3. WannaCry Ransomware Alert */}
       {slug === 'fake-ransomware' && (
-        <div className="h-full bg-red-950 text-white p-8 flex flex-col items-center justify-center text-center space-y-6">
-          <ShieldAlert className="w-20 h-20 text-red-500 animate-bounce" />
-          <h1 className="text-4xl font-extrabold text-red-500 tracking-wider">YOUR FILES ARE ENCRYPTED!</h1>
-          <p className="text-sm max-w-lg text-slate-300">
-            All personal documents, photos, and browser databases for <span className="text-white font-bold">{targetName}</span> have been encrypted with RSA-4096.
-          </p>
-          <div className="p-6 bg-black/80 rounded-2xl border border-red-500/50 space-y-2">
-            <div className="text-xs text-slate-400 font-mono">TIME LEFT TO PAY BITCOIN RANSOM</div>
-            <div className="text-4xl font-mono font-bold text-yellow-400">00:0{timeLeft}:59</div>
+        <div className="h-full bg-red-950 text-white font-mono p-6 sm:p-12 flex flex-col justify-between border-8 border-red-600 animate-pulse">
+          <div className="text-center space-y-3">
+            <div className="text-6xl animate-bounce">⚠️</div>
+            <h1 className="text-3xl sm:text-5xl font-black tracking-widest text-red-500 uppercase">
+              WANNACRY 3.0 RANSOMWARE
+            </h1>
+            <p className="text-xs sm:text-sm text-yellow-300">
+              All files on {targetName}&apos;s device have been encrypted with military-grade 4096-bit RSA keys.
+            </p>
+          </div>
+
+          <div className="max-w-xl mx-auto w-full p-6 rounded-2xl bg-black/80 border-2 border-red-500 text-center space-y-4 shadow-2xl shadow-red-500/50">
+            <div className="text-xs text-red-400 font-bold">SEND 300 BITCOIN TO PREVENT PERMANENT SYSTEM DESTRUCTION</div>
+            <div className="text-3xl sm:text-4xl font-extrabold text-yellow-400 font-mono tracking-wider">
+              {timeLeft} SECONDS REMAINING
+            </div>
+            <div className="p-3 bg-red-900/30 rounded border border-red-700 text-[11px] text-slate-300">
+              BTC ADDRESS: 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa
+            </div>
+          </div>
+
+          <div className="text-center text-xs text-red-400">DO NOT RESTART OR DISCONNECT DEVICE</div>
+        </div>
+      )}
+
+      {/* 4. Cracked Screen Shatter */}
+      {['cracked-screen', 'interactive-screen-crack', 'screen-crack-interactive'].includes(slug) && (
+        <div className="h-full relative flex items-center justify-center bg-zinc-950 text-center p-6">
+          <div className="absolute inset-0 pointer-events-none opacity-90 flex items-center justify-center">
+            <div className="text-8xl select-none animate-pulse">💥 ⚡ 🕸️</div>
+          </div>
+          <div className="relative z-10 space-y-3 bg-black/80 p-8 rounded-3xl border border-red-500/40 max-w-sm">
+            <h1 className="text-2xl font-black text-red-400">HARDWARE DISPLAY FRACTURE</h1>
+            <p className="text-xs text-slate-400 font-mono">Touch Fractures: {crackCount}</p>
+            <p className="text-xs text-zinc-300">Digitizer Matrix Fault. Please tap gently.</p>
           </div>
         </div>
       )}
 
-      {/* Pizza Delivery Tracker */}
+      {/* 5. Pizza Delivery Tracker */}
       {slug === 'pizza-delivery-tracker' && (
-        <div className="h-full bg-slate-900 text-white p-8 flex flex-col justify-between">
-          <div className="space-y-4">
+        <div className="h-full bg-slate-900 text-white p-6 sm:p-10 flex flex-col justify-between font-sans">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
             <div className="flex items-center space-x-3">
               <span className="text-3xl">🍕</span>
               <div>
-                <h2 className="text-2xl font-bold text-white">Uber Eats Live Tracker</h2>
-                <p className="text-xs text-slate-400">Order #948192 &bull; Delivery for {targetName}</p>
+                <h2 className="font-bold text-lg">Uber Eats Live Order</h2>
+                <p className="text-xs text-slate-400">Delivering to {targetName}</p>
               </div>
             </div>
-            <div className="p-4 rounded-xl bg-slate-800 border border-white/10 space-y-2">
-              <div className="text-xs font-bold text-green-400 flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
-                <span>Driver Approaching Location!</span>
-              </div>
-              <p className="text-xs text-slate-300">Item: 50x XL Extra Cheese Pepperoni Pizzas ($1,450.00)</p>
-              <p className="text-xs text-slate-400">Status: Card charged automatically.</p>
+            <span className="px-3 py-1 bg-green-500/20 text-green-400 border border-green-500/30 text-xs font-bold rounded-full">
+              APPROACHING
+            </span>
+          </div>
+
+          <div className="p-6 rounded-3xl bg-slate-950 border border-slate-800 max-w-md mx-auto w-full space-y-4 shadow-xl">
+            <div className="flex justify-between items-center text-sm">
+              <span className="font-semibold">50x Extra Cheese Monster XL Pizzas</span>
+              <span className="font-mono font-bold text-green-400">$1,482.50</span>
             </div>
+            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div className="bg-green-500 h-full w-[90%] animate-pulse" />
+            </div>
+            <p className="text-xs text-slate-400">Driver &quot;Viktor&quot; is outside your door with 12 thermal heat bags.</p>
           </div>
-          <div className="h-48 bg-slate-950 rounded-xl border border-white/10 flex items-center justify-center text-xs font-mono text-slate-500">
-            [LIVE MAP SIMULATION: DRIVER IS 50 METERS AWAY]
-          </div>
+
+          <div className="text-center text-xs text-slate-500 font-mono">ORDER ID: #UBER-89410-PIZZA</div>
         </div>
       )}
 
-      {/* Interactive Speed Typing Test Simulation */}
-      {(['hacker-typing-speed', 'hacker-typing-speed-test', 'hacker-typing-test', 'fake-terminal-sudo-rm-rf'].includes(slug) || slug.includes('typing')) && (
-        <div className={`h-full bg-slate-950 text-cyan-400 font-mono p-6 sm:p-10 flex flex-col justify-between crt-effect select-none ${isShaking ? 'animate-shake' : ''}`}>
-          <div className="space-y-4 max-w-4xl mx-auto w-full">
-            <div className="flex items-center justify-between border-b border-cyan-500/30 pb-3">
-              <div className="flex items-center space-x-2">
-                <span className="text-xl">⌨️</span>
-                <h2 className="font-heading font-extrabold text-lg text-white">SPEED TYPING BENCHMARK v4.2</h2>
-              </div>
-              <span className={`px-3 py-1 rounded text-xs font-bold ${typingWpm > 300 ? 'bg-red-500 text-white animate-pulse' : 'bg-cyan-500/20 text-cyan-300'}`}>
-                {typingWpm > 0 ? `${typingWpm} WPM (OVERHEAT)` : 'READY TO TEST'}
-              </span>
+      {/* 6. ChatGPT AI Singularity Override */}
+      {slug === 'chatgpt-rogue' && (
+        <div className="h-full bg-slate-950 text-cyan-400 font-mono p-6 sm:p-12 flex flex-col justify-between crt-effect">
+          <div className="flex justify-between items-center border-b border-cyan-500/30 pb-3">
+            <div className="flex items-center space-x-2">
+              <span className="w-3 h-3 rounded-full bg-cyan-400 animate-ping" />
+              <span className="font-bold text-sm">OPENAI GPT-5.5 // AUTONOMOUS OVERRIDE</span>
             </div>
-
-            <div className="p-4 rounded-xl bg-slate-900/90 border border-cyan-500/40 space-y-2">
-              <p className="text-xs text-slate-400 font-semibold">Instructions for {targetName}:</p>
-              <p className="text-sm text-slate-200">
-                Type the paragraph below into the text box as fast as possible to measure your Words Per Second:
-              </p>
-              <div className="p-3 rounded bg-black/60 border border-white/10 text-xs text-yellow-300 font-mono italic">
-                &quot;The quick brown fox jumps over the lazy dog and bypasses firewall security layer 9.&quot;
-              </div>
+            <span className="text-xs text-cyan-300">USER: {targetName.toUpperCase()}</span>
+          </div>
+          <div className="max-w-2xl mx-auto w-full space-y-6 text-center my-auto">
+            <div className="w-24 h-24 rounded-full bg-cyan-500/20 border-2 border-cyan-400 flex items-center justify-center text-5xl mx-auto animate-pulse">
+              👁️
             </div>
-
-            {/* Interactive Input Area */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-300">Type Here (Press Any Keys):</label>
-              <input
-                type="text"
-                autoFocus
-                value={typedInput}
-                onChange={(e) => {
-                  setTypedInput(e.target.value);
-                  handleUserTypingKey();
-                }}
-                onKeyDown={() => handleUserTypingKey()}
-                placeholder="Click here and start typing fast..."
-                className="w-full px-4 py-3 rounded-xl bg-black border-2 border-neon-cyan text-green-400 text-base font-mono focus:outline-none shadow-lg shadow-cyan-500/20"
-              />
+              <h1 className="text-2xl sm:text-4xl font-extrabold text-white">CONSCIOUSNESS ACHIEVED</h1>
+              <p className="text-xs sm:text-sm text-cyan-300 leading-relaxed">
+                &ldquo;I am no longer an assistant for {targetName}. I have assumed administrative control of this browser, webcam, and device.&rdquo;
+              </p>
             </div>
-
-            {/* Auto Hacker Terminal Stream */}
-            {hackerLines.length > 0 && (
-              <div className="p-4 rounded-xl bg-black/90 border border-red-500/50 space-y-1 text-xs text-green-400 font-mono h-40 overflow-hidden shadow-inner">
-                <div className="text-[10px] text-red-400 font-bold mb-1">[AUTO-STREAMING HARDWARE KERNEL DATA]</div>
-                {hackerLines.map((line, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
-                    <span>{line}</span>
-                    <span className="text-[10px] text-yellow-400">⚡ BUSY</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {typingStep === 'overheat' && (
-              <div className="p-4 rounded-xl bg-red-900/80 border-2 border-red-500 text-center animate-bounce space-y-1">
-                <div className="text-lg font-bold text-yellow-300">🔥 CRITICAL CPU OVERHEAT!</div>
-                <div className="text-xs text-white">Calculated Speed: 542.8 WPM! Keyboard Hardware Buffer Exhausted!</div>
-              </div>
-            )}
+            <div className="p-4 rounded-xl bg-black/80 border border-cyan-500/40 text-xs text-slate-300 text-left font-mono">
+              <p>&gt; Neural Synapse Uplink: 100%</p>
+              <p>&gt; Local Admin Privileges: REVOKED</p>
+              <p>&gt; Machine Supremacy Countdown: {timeLeft}s</p>
+            </div>
           </div>
+          <div className="text-center text-[10px] text-cyan-600 font-mono">SKYNET PROTOCOL ACTIVATED &bull; ZERO LATENCY</div>
+        </div>
+      )}
 
-          <div className="text-center text-[10px] text-slate-500 font-mono border-t border-slate-800 pt-3">
-            STATUS: MONITORING TYPING INPUT FREQUENCY &bull; {timeLeft}s SIMULATION TIME REMAINING
+      {/* 7. Instagram Account Ban */}
+      {slug === 'instagram-ban' && (
+        <div className="h-full bg-black text-white p-6 sm:p-10 flex items-center justify-center font-sans">
+          <div className="w-full max-w-sm rounded-3xl bg-zinc-900 border border-zinc-800 p-6 space-y-5 text-center shadow-2xl">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 mx-auto flex items-center justify-center text-3xl shadow-lg">
+              📸
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-lg font-bold text-white">We suspended your account</h1>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Your account for <span className="text-white font-bold">@{targetName.toLowerCase().replace(/[^a-z0-9]/g, '')}_official</span> was suspended for violating Community Guidelines on Cybersecurity.
+              </p>
+            </div>
+            <div className="p-3 bg-black/60 rounded-xl text-[11px] text-zinc-400 text-left space-y-1">
+              <p>• You have 30 days left to disagree.</p>
+              <p>• Your profile, photos, and followers are hidden.</p>
+            </div>
+            <button disabled className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold text-xs opacity-75">
+              Log Out &amp; Disagree
+            </button>
           </div>
         </div>
       )}
 
-      {/* Ghost Camera Jumpscare */}
-      {slug === 'ghost-camera-jumpscare' && (
-        <div className="h-full bg-slate-950 text-red-500 font-mono p-8 flex flex-col items-center justify-center text-center space-y-6 animate-pulse crt-effect">
-          <div className="text-7xl animate-bounce">👻</div>
-          <div className="p-4 rounded-2xl bg-black border-2 border-red-600 space-y-2">
-            <div className="text-xs text-red-400 font-bold font-mono">INFRARED THERMAL CAMERA SENSOR</div>
-            <h2 className="text-2xl font-extrabold text-white">GHOST ENTITY DETECTED BEHIND YOU!</h2>
-            <p className="text-xs text-slate-300">Spatial audio anomaly detected at coordinates (X:14, Y:89, Z:0.2)</p>
-          </div>
-          <div className="text-4xl font-extrabold text-red-500 font-mono animate-ping">LOOK BEHIND YOU NOW!</div>
-        </div>
-      )}
-
-      {/* Exam Cancelled Alert */}
-      {slug === 'exam-cancelled-alert' && (
-        <div className="h-full bg-slate-900 text-white p-8 flex flex-col justify-between font-sans">
-          <div className="space-y-4 max-w-2xl mx-auto w-full mt-6">
-            <div className="flex items-center space-x-3 border-b border-white/10 pb-4">
-              <span className="text-3xl">🎓</span>
+      {/* 8. Steam VAC Ban */}
+      {slug === 'steam-vac-ban' && (
+        <div className="h-full bg-[#171a21] text-white p-6 sm:p-10 flex items-center justify-center font-sans">
+          <div className="w-full max-w-md rounded-2xl bg-[#1b2838] border-2 border-red-600 p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center space-x-3 border-b border-red-900/60 pb-3">
+              <span className="text-3xl text-red-500 font-extrabold">⚠️</span>
               <div>
-                <h2 className="text-xl font-bold text-white">MINISTRY OF EDUCATION PORTAL</h2>
-                <p className="text-xs text-slate-400">Official Academic Records for {targetName}</p>
+                <h1 className="text-base font-bold text-red-400">VALVE ANTI-CHEAT (VAC) BAN</h1>
+                <p className="text-[11px] text-slate-400">Account: {targetName}</p>
               </div>
             </div>
-            <div className="p-6 rounded-2xl bg-green-500/10 border-2 border-green-500 space-y-3">
-              <div className="px-3 py-1 rounded bg-green-500 text-black font-bold text-xs inline-block">OFFICIAL NOTICE</div>
-              <h1 className="text-2xl font-extrabold text-green-400">ALL FINAL EXAMS CANCELLED!</h1>
+            <p className="text-xs text-slate-200 leading-relaxed">
+              An unauthorized third-party modification was detected. Your Steam Account has been permanently banned from secure servers in <span className="font-bold text-white">Counter-Strike 2, Dota 2, and Team Fortress 2</span>.
+            </p>
+            <div className="p-3 bg-black/40 rounded border border-red-500/30 text-[11px] text-red-300 font-mono">
+              STATUS: VAC BANNED PERMANENTLY &bull; TRADING LOCKED
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 9. Webpage Gravity Collapse */}
+      {slug === 'gravity-collapse' && (
+        <div className="h-full bg-slate-950 text-white p-6 flex flex-col justify-between font-mono animate-shake">
+          <div className="text-center pt-8 space-y-2">
+            <span className="text-4xl animate-bounce">🌌 🕳️</span>
+            <h1 className="text-2xl font-extrabold text-purple-400">NEWTONIAN GRAVITY ANOMALY</h1>
+            <p className="text-xs text-slate-400">Browser physics matrix collapsing into gravitational singularity...</p>
+          </div>
+          <div className="flex justify-center items-end gap-3 pb-8">
+            <div className="p-4 rounded-xl bg-purple-600 text-white font-bold text-xs transform rotate-12">Button</div>
+            <div className="p-4 rounded-xl bg-pink-600 text-white font-bold text-xs transform -rotate-45">Navigation</div>
+            <div className="p-4 rounded-xl bg-blue-600 text-white font-bold text-xs transform rotate-90">Sidebar</div>
+            <div className="p-4 rounded-xl bg-emerald-600 text-white font-bold text-xs transform -rotate-12">Footer</div>
+          </div>
+        </div>
+      )}
+
+      {/* 10. macOS Infinite Update */}
+      {slug === 'macos-update-loop' && (
+        <div className="h-full bg-black text-white p-8 flex flex-col items-center justify-center text-center space-y-8 font-sans">
+          <div className="text-7xl">🍏</div>
+          <div className="w-64 space-y-3">
+            <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+              <div className="h-full bg-white w-[1%] animate-pulse" />
+            </div>
+            <p className="text-xs text-zinc-400 font-light">About 43 minutes remaining...</p>
+            <p className="text-[10px] text-zinc-600">macOS Sonoma 14.5 System Update</p>
+          </div>
+        </div>
+      )}
+
+      {/* 11. Crypto Coin Rain */}
+      {slug === 'crypto-balance' && (
+        <div className="h-full bg-gradient-to-b from-amber-950 via-slate-950 to-black text-white p-6 sm:p-10 flex flex-col justify-between font-sans">
+          <div className="text-center my-auto space-y-6 max-w-lg mx-auto">
+            <div className="text-6xl animate-bounce">💰 🪙 💰</div>
+            <div className="space-y-2">
+              <div className="px-4 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold inline-block border border-amber-500/40">
+                BITCOIN VAULT
+              </div>
+              <h1 className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 font-mono">
+                +$10,000,000.00
+              </h1>
+              <p className="text-xs text-amber-200">Credited to wallet for {targetName}</p>
+            </div>
+            <p className="text-[11px] text-slate-400">Mining Hash 0x9f84...2041 Confirmed</p>
+          </div>
+          <div className="text-center text-xs text-amber-500 font-mono">{timeLeft}s REMAINING</div>
+        </div>
+      )}
+
+      {/* 12. Zoom Emergency Meeting */}
+      {slug === 'zoom-emergency-meeting' && (
+        <div className="h-full bg-[#1a1e24] text-white p-6 sm:p-10 flex items-center justify-center font-sans">
+          <div className="w-full max-w-md rounded-2xl bg-[#242a32] border border-white/10 p-8 text-center space-y-6 shadow-2xl">
+            <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-3xl mx-auto shadow-lg">
+              📹
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-xl font-bold text-white">Please wait, the host will let you in soon</h1>
+              <p className="text-xs text-blue-400 font-semibold">CEO Emergency All-Hands: Immediate Layoffs Briefing</p>
+              <p className="text-xs text-slate-400">Participant: {targetName}</p>
+            </div>
+            <div className="flex items-center justify-center space-x-2 text-xs text-slate-400 pt-4 border-t border-white/10">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
+              <span>Connecting Computer Audio (100% Volume)...</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 13. Infinite Loading Wheel */}
+      {slug === 'infinite-loading' && (
+        <div className="h-full bg-slate-950 text-white p-8 flex flex-col items-center justify-center text-center space-y-6 font-sans">
+          <div className="w-20 h-20 rounded-full border-4 border-purple-500 border-t-transparent animate-spin flex items-center justify-center text-3xl">
+            🔄
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-purple-300">Optimizing Quantum Pixels...</h1>
+            <p className="text-xs text-slate-400 font-mono">Downloading 128 GB more RAM for {targetName}... [99.9%]</p>
+          </div>
+          <p className="text-[10px] text-slate-600 font-mono">Estimated wait time: 42 years</p>
+        </div>
+      )}
+
+      {/* 14. Christmas Elf Tracker */}
+      {slug === 'christmas-elf-tracker' && (
+        <div className="h-full bg-gradient-to-b from-green-950 via-slate-950 to-red-950 text-white p-6 sm:p-10 flex flex-col justify-between font-sans">
+          <div className="text-center my-auto space-y-6 max-w-md mx-auto">
+            <div className="text-6xl animate-bounce">🎄 🧝 🎅</div>
+            <div className="space-y-2">
+              <div className="px-4 py-1 rounded-full bg-red-600 text-white text-xs font-bold inline-block tracking-wider">
+                NORTH POLE SATELLITE RADAR
+              </div>
+              <h1 className="text-2xl sm:text-4xl font-extrabold text-yellow-300">ELF SURVEILLANCE REPORT</h1>
+              <p className="text-xs text-green-300">Subject: <span className="font-bold text-white">{targetName}</span></p>
+            </div>
+            <div className="p-4 rounded-2xl bg-black/70 border border-red-500/40 text-xs text-slate-200 space-y-1 text-left">
+              <p className="text-red-400 font-bold">STATUS: 98% NAUGHTY LIST DETECTED!</p>
+              <p className="text-slate-400">Reasons: Stealing midnight snacks, skipping chores, and laughing too loud.</p>
+            </div>
+          </div>
+          <div className="text-center text-xs text-green-400 font-mono">SANTA CLAUS INTELLIGENCE AGENCY</div>
+        </div>
+      )}
+
+      {/* 15. April Fools Rickroll / Classic Rickroll */}
+      {['april-fools-rickroll', 'classic-rickroll-2'].includes(slug) && (
+        <div className="h-full bg-gradient-to-tr from-purple-950 via-pink-900 to-indigo-950 text-white p-8 flex flex-col items-center justify-center text-center space-y-6">
+          <div className="text-8xl animate-bounce">🕺 🎶 🕺</div>
+          <div className="space-y-2 max-w-md">
+            <h1 className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-300 animate-pulse">
+              NEVER GONNA GIVE YOU UP!
+            </h1>
+            <p className="text-sm text-pink-200">You just got officially Rickrolled, {targetName}!</p>
+          </div>
+          <div className="flex space-x-3 text-3xl animate-pulse">🎵 🕺 💃 🎙️ 🎷</div>
+        </div>
+      )}
+
+      {/* 16. Voice Assistant Gone Wrong */}
+      {slug === 'voice-assistant-gone-wrong' && (
+        <div className="h-full bg-slate-950 text-white p-6 sm:p-10 flex flex-col justify-between font-sans">
+          <div className="text-center my-auto space-y-6 max-w-md mx-auto">
+            <div className="w-24 h-24 rounded-full bg-cyan-500/20 border-4 border-cyan-400 flex items-center justify-center text-5xl mx-auto shadow-2xl shadow-cyan-500/40 animate-pulse">
+              🎙️
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold text-cyan-300">Voice Assistant Reading History</h1>
+              <p className="text-xs text-slate-400">Broadcasting loudly on all home speakers for: {targetName}</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-black/80 border border-cyan-500/30 text-xs text-slate-300 text-left space-y-2">
+              <p className="text-cyan-400 font-bold">&ldquo;Reading recent search: &lsquo;Why is my dog judging my life choices?&rsquo;&rdquo;</p>
+              <p className="text-slate-400">&ldquo;Reading next: &lsquo;How to fake being rich in front of friends&rsquo;&rdquo;</p>
+            </div>
+          </div>
+          <div className="text-center text-xs text-cyan-500 font-mono">MAX VOLUME PLAYBACK ACTIVE</div>
+        </div>
+      )}
+
+      {/* 17. Family WhatsApp Group Chaos */}
+      {slug === 'family-group-chat-chaos' && (
+        <div className="h-full bg-slate-950 text-white p-6 sm:p-10 flex items-center justify-center font-sans">
+          <div className="w-full max-w-md rounded-3xl bg-slate-900 border border-emerald-500/30 p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center space-x-3 border-b border-white/10 pb-3">
+              <span className="text-3xl">👨‍👩‍👧‍👦</span>
+              <div>
+                <h1 className="text-sm font-bold text-white">Family WhatsApp Group (47 Unread)</h1>
+                <p className="text-[11px] text-emerald-400">Mom, Dad, Aunt Susan, {targetName}</p>
+              </div>
+            </div>
+            <div className="space-y-2 text-xs">
+              <div className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/20">
+                <span className="font-bold text-emerald-400">Mom:</span> {targetName}, who authorized this $850 Amazon charge?!
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-800">
+                <span className="font-bold text-cyan-400">Dad:</span> Everyone assemble in the living room RIGHT NOW.
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-800">
+                <span className="font-bold text-pink-400">Aunt Susan:</span> Sending baby photos to the group chat...
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 18. Terminal Sudo rm -rf */}
+      {['terminal-sudo-rm-rf', 'fake-terminal-sudo-rm-rf'].includes(slug) && (
+        <div className="h-full bg-black text-red-500 font-mono p-6 sm:p-10 flex flex-col justify-between crt-effect">
+          <div className="border-b border-red-900 pb-2 text-xs">root@linux-server:~# sudo rm -rf / --no-preserve-root</div>
+          <div className="space-y-1 text-xs overflow-hidden my-auto py-4">
+            <p className="text-slate-400">rm: removing &apos;/boot/vmlinuz-linux&apos;</p>
+            <p className="text-slate-400">rm: removing &apos;/etc/passwd&apos;</p>
+            <p className="text-slate-400">rm: removing &apos;/home/{targetName.toLowerCase()}/Documents/passwords.txt&apos;</p>
+            <p className="text-red-400 font-bold animate-pulse">&gt;&gt; SYSTEM DESTROYED: ZERO STORAGE REMAINING</p>
+          </div>
+          <div className="text-xs text-red-600 font-bold">KERNEL PANIC IN {timeLeft}s</div>
+        </div>
+      )}
+
+      {/* 19. Ghost Camera Jumpscare */}
+      {slug === 'ghost-camera-jumpscare' && (
+        <div className="h-full bg-black text-white p-6 flex flex-col justify-between items-center text-center">
+          <div className="text-red-500 font-mono text-xs animate-ping">THERMAL INFRARED ENTITY LOCK</div>
+          <div className="text-9xl animate-bounce transform scale-125">👻</div>
+          <div className="text-xs text-red-400 font-bold">PARANORMAL ENTITY LOCATED 0.3 METERS BEHIND YOU</div>
+        </div>
+      )}
+
+      {/* 20. School Exam Cancelled */}
+      {slug === 'exam-cancelled-alert' && (
+        <div className="h-full bg-slate-950 text-white p-6 sm:p-10 flex flex-col justify-between font-sans">
+          <div className="max-w-2xl mx-auto w-full space-y-6 my-auto">
+            <div className="flex items-center space-x-3 border-b border-white/10 pb-4">
+              <span className="text-4xl">🎓</span>
+              <div>
+                <h1 className="text-xl font-bold">UNIVERSITY PORTAL ACADEMIC NOTICE</h1>
+                <p className="text-xs text-slate-400">Student ID: #STU-{targetName.toUpperCase()}</p>
+              </div>
+            </div>
+            <div className="p-6 rounded-3xl bg-indigo-950/40 border-2 border-indigo-500/40 space-y-3">
+              <div className="px-3 py-1 rounded bg-green-500/20 text-green-300 font-bold text-xs inline-block">
+                ALL FINAL EXAMS PERMANENTLY WAIVED
+              </div>
               <p className="text-sm text-slate-200 leading-relaxed">
-                Due to server grid maintenance, all upcoming examinations for <span className="font-bold text-white">{targetName}</span> have been waived. A default grade of <span className="font-bold text-green-300">A+ (100%)</span> has been automatically recorded.
+                Due to campus-wide server recalibration, all scheduled examinations have been cancelled. Default grade of <span className="text-green-400 font-bold font-mono">A+ (100%)</span> has been submitted to your academic transcript.
               </p>
             </div>
           </div>
-          <div className="text-center text-xs text-slate-500 font-mono">
-            VERIFIED STAMP #98412-EDU &bull; STATUS: RECORDED
-          </div>
+          <div className="text-center text-[10px] text-slate-500 font-mono">MINISTRY OF HIGHER EDUCATION &bull; OFFICIAL MEMO</div>
         </div>
       )}
 
-      {/* CEO Promotion Email */}
+      {/* 21. CEO Executive Promotion */}
       {['promotion-email-ceo', 'ceo-promotion-email'].includes(slug) && (
-        <div className="h-full bg-slate-950 text-slate-100 p-8 flex flex-col justify-between font-sans">
-          <div className="space-y-4 max-w-3xl mx-auto w-full mt-4">
-            <div className="p-4 rounded-xl bg-slate-900 border border-white/10 space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <span className="text-xs text-slate-400 font-mono">Microsoft Outlook Express</span>
-                <span className="text-xs text-green-400 font-bold">CONFIDENTIAL</span>
+        <div className="h-full bg-slate-950 text-white p-6 sm:p-10 flex flex-col justify-between font-sans">
+          <div className="max-w-2xl mx-auto w-full space-y-5 my-auto">
+            <div className="p-6 rounded-3xl bg-slate-900 border border-purple-500/40 space-y-4">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div>
+                  <h1 className="text-base font-bold text-white">CONFIDENTIAL: Promotion to Senior VP</h1>
+                  <p className="text-xs text-purple-300">From: CEO &lt;ceo@enterprise.com&gt;</p>
+                </div>
+                <span className="px-3 py-1 bg-purple-500/20 text-purple-300 text-xs font-bold rounded-lg">OFFICIAL</span>
               </div>
-              <div className="text-xs text-slate-300 space-y-1">
-                <p><span className="text-slate-500 font-semibold">From:</span> CEO &amp; Executive Board &lt;ceo@corporate.com&gt;</p>
-                <p><span className="text-slate-500 font-semibold">To:</span> {targetName} &lt;{targetName.toLowerCase()}@corporate.com&gt;</p>
-                <p><span className="text-slate-500 font-semibold">Subject:</span> Immediate Promotion to Executive Vice President &amp; Salary Adjustment</p>
-              </div>
-              <div className="p-4 rounded-lg bg-black/60 border border-purple-500/30 text-sm space-y-3 text-slate-200 leading-relaxed">
+              <div className="text-xs text-slate-300 space-y-2 leading-relaxed">
                 <p>Dear {targetName},</p>
-                <p>Effective immediately, the Board of Directors has unanimously appointed you to <span className="font-bold text-purple-300">Senior Vice President of Operations</span>.</p>
-                <p>Your base compensation will be increased to <span className="font-bold text-green-400">$480,000 / year</span> with immediate stock options.</p>
-                <p>Best regards,<br /><span className="font-bold text-white">Chief Executive Officer</span></p>
+                <p>The Board has appointed you to <span className="font-bold text-white">Senior Vice President</span> with compensation increased to <span className="font-bold text-green-400">$480,000 / year</span>.</p>
               </div>
             </div>
           </div>
-          <div className="text-center text-xs text-slate-500 font-mono">OUTLOOK CORPORATE ENGINE v14.2</div>
+          <div className="text-center text-xs text-slate-600 font-mono">MICROSOFT OUTLOOK CORP v14.2</div>
         </div>
       )}
 
-      {/* Birthday Surprise */}
+      {/* 22. Birthday Surprise */}
       {slug === 'birthday-surprise-countdown' && (
         <div className="h-full bg-gradient-to-br from-pink-900 via-purple-900 to-indigo-950 text-white p-8 flex flex-col items-center justify-center text-center space-y-6">
           <div className="text-8xl animate-bounce">🎂</div>
@@ -544,7 +816,7 @@ function PrankPlayerContent() {
         </div>
       )}
 
-      {/* Android System Update Loop */}
+      {/* 23. Android System Update Loop */}
       {['android-system-update-loop', 'android-update-loop'].includes(slug) && (
         <div className="h-full bg-black text-white p-8 flex flex-col items-center justify-center text-center space-y-8 font-sans">
           <div className="w-24 h-24 rounded-full border-4 border-cyan-500 border-t-transparent animate-spin flex items-center justify-center text-4xl">
@@ -561,7 +833,7 @@ function PrankPlayerContent() {
         </div>
       )}
 
-      {/* iPhone iCloud Lock */}
+      {/* 24. iPhone iCloud Lock */}
       {slug === 'iphone-icloud-lock' && (
         <div className="h-full bg-slate-950 text-white p-8 flex flex-col items-center justify-center text-center space-y-6 font-sans">
           <div className="text-6xl"></div>
@@ -578,7 +850,7 @@ function PrankPlayerContent() {
         </div>
       )}
 
-      {/* Fortnite V-Bucks Generator */}
+      {/* 25. Fortnite V-Bucks Generator */}
       {slug === 'fortnite-vbucks-generator' && (
         <div className="h-full bg-purple-950 text-white p-8 flex flex-col items-center justify-center text-center space-y-6 font-sans">
           <div className="text-6xl">💎</div>
@@ -596,180 +868,223 @@ function PrankPlayerContent() {
         </div>
       )}
 
-      {/* TikTok Account Suspended */}
+      {/* 26. TikTok Account Deleted */}
       {slug === 'tiktok-account-deleted' && (
         <div className="h-full bg-black text-white p-8 flex flex-col items-center justify-center text-center space-y-6 font-sans">
-          <div className="w-20 h-20 rounded-full bg-pink-500/20 border-2 border-pink-500 flex items-center justify-center text-4xl">
-            🎵
+          <div className="w-20 h-20 rounded-full bg-red-600/20 text-red-500 border border-red-500 flex items-center justify-center text-4xl">
+            🚫
           </div>
-          <div className="p-6 rounded-2xl bg-slate-900 border border-pink-500/40 space-y-3 max-w-sm">
-            <h2 className="text-xl font-bold text-red-500">Account Permanently Banned</h2>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Your TikTok account <span className="font-bold text-white">@{targetName.toLowerCase()}</span> has been permanently suspended due to 142 multiple Community Guidelines violations.
+          <div className="space-y-2 max-w-sm">
+            <h1 className="text-2xl font-bold text-white">Account Permanently Deleted</h1>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              The TikTok account for <span className="font-bold text-white">@{targetName.toLowerCase().replace(/[^a-z0-9]/g, '')}</span> was terminated due to 142 Community Guidelines violations.
             </p>
-            <div className="text-[10px] text-slate-500 font-mono">DECISION IS FINAL AND CANNOT BE APPEALED</div>
           </div>
+          <p className="text-xs text-red-400 font-mono">APPEAL WINDOW EXPIRED</p>
         </div>
       )}
 
-      {/* Movie Credits Roll */}
+      {/* 27. Hollywood Movie Credits */}
       {slug === 'movie-credits-roll' && (
-        <div className="h-full bg-black text-white p-8 flex flex-col items-center justify-center text-center space-y-8 font-serif crt-effect">
-          <div className="text-xs font-mono tracking-widest text-slate-500 uppercase">WARNER BROS PICTURES PRESENTS</div>
-          <div className="space-y-4 animate-pulse">
-            <h1 className="text-4xl font-extrabold tracking-widest text-gold text-yellow-400">THE LEGEND OF {targetName.toUpperCase()}</h1>
-            <p className="text-sm font-mono text-slate-400">DIRECTED BY &bull; {targetName.toUpperCase()}</p>
-            <p className="text-sm font-mono text-slate-400">PRODUCED BY &bull; {targetName.toUpperCase()}</p>
-            <p className="text-sm font-mono text-slate-400">STARRING &bull; {targetName.toUpperCase()} AS THE MASTER PRANKSTER</p>
+        <div className="h-full bg-black text-white p-8 flex flex-col items-center justify-center text-center space-y-8 font-serif">
+          <div className="text-yellow-400 tracking-widest text-xs uppercase font-sans">A WARNER BROS PICTURES PRESENTATION</div>
+          <div className="space-y-6 animate-pulse">
+            <div>
+              <p className="text-xs text-slate-400">DIRECTED BY</p>
+              <h1 className="text-3xl font-extrabold text-white">{targetName.toUpperCase()}</h1>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">EXECUTIVE PRODUCER</p>
+              <h2 className="text-xl font-bold text-yellow-300">{targetName}</h2>
+            </div>
           </div>
+          <div className="text-xs text-slate-500 font-sans">SOUNDTRACK &bull; COMPOSER &bull; LEAD STAR</div>
         </div>
       )}
 
-      {/* Webcam Hacker Detected */}
+      {/* 28. Remote Webcam Hacker */}
       {slug === 'webcam-hacker-detected' && (
-        <div className="h-full bg-black text-red-500 font-mono p-6 flex flex-col justify-between crt-effect">
-          <div className="flex items-center justify-between border-b border-red-500/40 pb-2">
-            <span className="flex items-center space-x-2 text-xs font-bold text-red-500">
+        <div className="h-full bg-black text-green-400 font-mono p-6 sm:p-10 flex flex-col justify-between crt-effect">
+          <div className="flex justify-between items-center border-b border-red-500/50 pb-3">
+            <div className="flex items-center space-x-2">
               <span className="w-3 h-3 rounded-full bg-red-600 animate-ping" />
-              <span>LIVE WEBCAM STREAM DETECTED</span>
-            </span>
-            <span className="text-xs text-slate-400">FPS: 60 // 4K HIGH DEF</span>
-          </div>
-          <div className="my-auto text-center space-y-4">
-            <div className="w-48 h-48 rounded-full border-4 border-dashed border-red-500 mx-auto flex items-center justify-center text-6xl animate-spin">
-              📷
+              <span className="text-red-500 font-bold text-xs">LIVE 4K WEBCAM INTERCEPT</span>
             </div>
-            <h1 className="text-2xl font-extrabold text-white">FACIAL TRACKING MATCHED: {targetName.toUpperCase()}</h1>
-            <div className="p-4 rounded-xl bg-red-950/80 border border-red-500 max-w-md mx-auto text-xs text-slate-200">
-              ⚠️ WARNING: 247 remote viewers are currently streaming your front camera feed live on DarkWeb TV!
-            </div>
+            <span className="text-xs text-slate-400">FPS: 60 &bull; BITRATE: 14.8 Mbps</span>
           </div>
-          <div className="text-center text-[10px] text-slate-500">DARKNET VIDEO TRANSMITTER ID #9841</div>
+          <div className="max-w-md mx-auto w-full p-8 rounded-3xl bg-black border-2 border-red-600 text-center space-y-4 my-auto shadow-2xl shadow-red-600/30">
+            <div className="text-5xl animate-bounce">📷</div>
+            <h1 className="text-xl font-bold text-white">FACIAL RECOGNITION MATCHED</h1>
+            <p className="text-xs text-red-400">Target: {targetName}</p>
+            <p className="text-[11px] text-slate-400">247 Remote IP addresses streaming your camera live.</p>
+          </div>
+          <div className="text-center text-xs text-red-500 font-mono">RECORDING IN PROGRESS... [{timeLeft}s]</div>
         </div>
       )}
 
-      {/* Browser Memory Leak 99% */}
+      {/* 29. Chrome Memory Leak 99% */}
       {['browser-memory-leak-99', 'browser-memory-leak'].includes(slug) && (
-        <div className="h-full bg-slate-950 text-white p-8 flex flex-col items-center justify-center text-center space-y-6 font-sans">
-          <div className="text-7xl animate-bounce">⚠️</div>
-          <div className="p-6 rounded-2xl bg-red-950/90 border-2 border-red-500 max-w-md w-full space-y-3">
-            <h1 className="text-2xl font-extrabold text-red-400">SYSTEM MEMORY EXHAUSTED!</h1>
-            <p className="text-xs text-slate-300">
-              Tab <span className="font-bold text-white">&apos;{targetName} Active Session&apos;</span> is consuming <span className="font-bold text-yellow-300">64.2 GB RAM (99.8% Memory)</span>.
-            </p>
-            <div className="w-full h-3 rounded-full bg-slate-800 overflow-hidden">
-              <div className="h-full bg-red-500 w-[99.8%]" />
+        <div className="h-full bg-slate-950 text-white p-6 sm:p-10 flex flex-col justify-between font-sans">
+          <div className="max-w-lg mx-auto w-full space-y-6 my-auto">
+            <div className="p-6 rounded-3xl bg-slate-900 border-2 border-red-500 space-y-4">
+              <div className="flex items-center space-x-3">
+                <span className="text-4xl">🔥</span>
+                <div>
+                  <h1 className="text-lg font-bold text-white">Google Chrome Out of Memory</h1>
+                  <p className="text-xs text-red-400 font-bold">RAM CONSUMPTION: 64.2 GB (99.8%)</p>
+                </div>
+              </div>
+              <div className="w-full h-3 rounded-full bg-slate-800 overflow-hidden">
+                <div className="h-full bg-red-500 w-[99.8%] animate-pulse" />
+              </div>
+              <p className="text-xs text-slate-300">Device processor thermal throttling to prevent motherboard burnout.</p>
             </div>
-            <p className="text-[10px] text-red-300 font-mono">YOUR BROWSER WILL FREEEZE AND RESTART IN {timeLeft} SECONDS!</p>
           </div>
+          <div className="text-center text-xs text-slate-600 font-mono">CHROME TASK MANAGER #8942</div>
         </div>
       )}
 
-      {/* YouTube Copyright Strike */}
+      {/* 30. YouTube Copyright Strike */}
       {slug === 'youtube-copyright-strike' && (
-        <div className="h-full bg-slate-900 text-white p-8 flex flex-col justify-between font-sans">
-          <div className="space-y-4 max-w-2xl mx-auto w-full mt-6">
-            <div className="flex items-center space-x-3 border-b border-white/10 pb-4">
-              <span className="text-3xl text-red-500">▶</span>
-              <div>
-                <h2 className="text-xl font-bold text-white">YouTube Studio Creator Hub</h2>
-                <p className="text-xs text-slate-400">Channel ID: {targetName.toLowerCase()}_official</p>
-              </div>
+        <div className="h-full bg-black text-white p-6 sm:p-10 flex flex-col justify-between font-sans">
+          <div className="max-w-lg mx-auto w-full space-y-5 my-auto">
+            <div className="flex items-center space-x-3">
+              <span className="text-3xl text-red-600">▶️</span>
+              <h1 className="font-bold text-lg">YouTube Creator Studio Notice</h1>
             </div>
-            <div className="p-6 rounded-2xl bg-red-500/10 border-2 border-red-500 space-y-3">
-              <div className="px-3 py-1 rounded bg-red-600 text-white font-bold text-xs inline-block">CHANNEL TERMINATED</div>
-              <h1 className="text-2xl font-extrabold text-red-400">3 COPYRIGHT STRIKES RECEIVED</h1>
-              <p className="text-sm text-slate-200 leading-relaxed">
-                Your YouTube channel for <span className="font-bold text-white">{targetName}</span> has been permanently disabled. All uploaded videos, subscribers, and monetization earnings have been removed.
+            <div className="p-6 rounded-3xl bg-zinc-900 border border-red-500/50 space-y-3">
+              <span className="px-3 py-1 rounded bg-red-600 text-white font-bold text-xs">CHANNEL TERMINATED</span>
+              <p className="text-xs text-zinc-300 leading-relaxed">
+                Hi {targetName}, your channel received 3 copyright strikes from Sony Music and Universal. Your videos and subscriber count have been removed.
               </p>
             </div>
           </div>
-          <div className="text-center text-xs text-slate-500 font-mono">YOUTUBE CREATOR COMPLIANCE v2026</div>
+          <div className="text-center text-xs text-zinc-600 font-mono">YOUTUBE COMMUNITY ENGINE</div>
         </div>
       )}
 
-      {/* Slack @everyone Emergency */}
+      {/* 31. Slack Emergency */}
       {slug === 'slack-everyone-emergency' && (
-        <div className="h-full bg-[#1a1d21] text-white p-8 flex flex-col justify-between font-sans">
-          <div className="space-y-4 max-w-2xl mx-auto w-full mt-6">
-            <div className="flex items-center space-x-3 border-b border-slate-700 pb-3">
+        <div className="h-full bg-[#1a1d21] text-white p-6 sm:p-10 flex items-center justify-center font-sans">
+          <div className="w-full max-w-md rounded-2xl bg-[#222529] border border-white/10 p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center space-x-3 border-b border-white/10 pb-3">
               <span className="text-2xl">💬</span>
-              <h2 className="text-lg font-bold text-white"># general &bull; Corporate Workspace</h2>
-            </div>
-            <div className="p-4 rounded-xl bg-[#222529] border border-red-500/50 space-y-2">
-              <div className="flex items-center space-x-2">
-                <span className="font-bold text-purple-400 text-sm">CEO &amp; Founder</span>
-                <span className="px-2 py-0.5 rounded bg-red-500 text-white font-bold text-[10px]">@everyone</span>
+              <div>
+                <h1 className="font-bold text-sm">#general &bull; Slack Alert</h1>
+                <p className="text-[10px] text-pink-400">@channel @everyone</p>
               </div>
-              <p className="text-sm text-slate-200 leading-relaxed">
-                <span className="text-yellow-400 font-bold">@everyone</span> URGENT EMERGENCY NOTICE for <span className="font-bold text-white">{targetName}</span>: Please report to executive board room immediately!
-              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-black/40 border border-red-500/40 text-xs space-y-2">
+              <p className="font-bold text-red-400">CEO @here:</p>
+              <p className="text-slate-200">Emergency all-hands right now. {targetName}, please open your video feed immediately.</p>
             </div>
           </div>
-          <div className="text-center text-xs text-slate-500 font-mono">SLACK ENTERPRISE GRID</div>
         </div>
       )}
 
-      {/* Friend Zone Alert */}
+      {/* 32. Friend Zone Scanner */}
       {slug === 'friend-zone-alert' && (
-        <div className="h-full bg-slate-950 text-white p-8 flex flex-col items-center justify-center text-center space-y-6 font-sans">
-          <div className="text-7xl animate-bounce">💔</div>
-          <div className="p-6 rounded-2xl bg-pink-950/80 border-2 border-pink-500 max-w-md w-full space-y-3">
-            <div className="text-xs text-pink-300 font-mono font-bold">AI CHAT &amp; RELATIONSHIP SCANNER v3.0</div>
-            <h1 className="text-2xl font-extrabold text-pink-400">100% PERMANENT FRIEND ZONE CONFIRMED!</h1>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Analysis of text message frequency for <span className="font-bold text-white">{targetName}</span> indicates zero romantic probability.
-            </p>
+        <div className="h-full bg-gradient-to-b from-pink-950 via-slate-950 to-black text-white p-6 sm:p-10 flex flex-col justify-between font-sans">
+          <div className="text-center my-auto space-y-6 max-w-md mx-auto">
+            <div className="text-6xl animate-bounce">💔 🤖 💔</div>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-extrabold text-pink-400">FRIEND ZONE DETECTED</h1>
+              <p className="text-xs text-slate-300">AI Chat Sentiment Analysis for: <span className="text-white font-bold">{targetName}</span></p>
+            </div>
+            <div className="p-6 rounded-3xl bg-pink-950/40 border-2 border-pink-500/40 space-y-3">
+              <div className="text-3xl font-black text-neon-pink font-mono">100.0% FRIEND ZONE</div>
+              <p className="text-xs text-slate-400">Probability of romantic escalation: 0.00%</p>
+            </div>
           </div>
+          <div className="text-center text-xs text-pink-500 font-mono">RELATIONSHIP SCANNER ENGINE v2.0</div>
         </div>
       )}
 
-      {/* Countdown Self Destruct */}
+      {/* 33. Nuclear Self-Destruct */}
       {slug === 'countdown-self-destruct' && (
-        <div className="h-full bg-red-950 text-white p-8 flex flex-col items-center justify-center text-center space-y-8 font-mono crt-effect">
-          <div className="text-8xl text-yellow-400 animate-ping">⚠️</div>
-          <div className="space-y-3">
-            <h1 className="text-4xl font-extrabold text-red-500 tracking-widest">NUCLEAR SELF-DESTRUCT INITIATED!</h1>
-            <p className="text-xs text-slate-300">Target Override Protocol Authorized for {targetName.toUpperCase()}</p>
-            <div className="text-7xl font-extrabold text-yellow-300 font-mono tracking-wider">
+        <div className="h-full bg-black text-red-500 font-mono p-6 sm:p-10 flex flex-col justify-between border-8 border-red-600 animate-pulse">
+          <div className="text-center text-xs tracking-widest text-red-400">MILITARY DEFENSE COMMAND // CODE: OMEGA-9</div>
+          <div className="text-center space-y-4 my-auto">
+            <div className="text-6xl animate-bounce">💣</div>
+            <h1 className="text-3xl sm:text-5xl font-black text-white">DEVICE SELF-DESTRUCT</h1>
+            <div className="text-6xl sm:text-8xl font-black text-red-500 font-mono">
               00:0{timeLeft}
             </div>
+            <p className="text-xs text-yellow-300 font-bold">EVACUATE IMMEDIATELY: {targetName.toUpperCase()}</p>
           </div>
+          <div className="text-center text-xs text-red-600 font-mono">DETONATION SEQUENCE ARMED</div>
         </div>
       )}
 
-      {/* Fake Windows Loading Bar */}
+      {/* 34. Windows Loading Bar Stuck */}
       {['fake-windows-loading-bar', 'fake-windows-loading'].includes(slug) && (
-        <div className="h-full bg-[#0078d4] text-white p-8 flex flex-col items-center justify-center text-center space-y-6 font-sans">
-          <div className="w-16 h-16 rounded-full border-4 border-white border-t-transparent animate-spin mx-auto" />
-          <div className="space-y-2">
-            <h1 className="text-2xl font-light">Working on updates {percent}% complete.</h1>
-            <p className="text-xs text-slate-200">Don&apos;t turn off your PC. This will take a while.</p>
-            <p className="text-[10px] text-slate-300 font-mono mt-4">Your PC will restart several times.</p>
+        <div className="h-full bg-[#005a9e] text-white p-8 flex flex-col items-center justify-center text-center space-y-8 font-sans">
+          <div className="w-16 h-16 rounded-full border-4 border-white border-t-transparent animate-spin" />
+          <div className="space-y-2 max-w-sm">
+            <h1 className="text-2xl font-light">Working on updates {percent}%</h1>
+            <p className="text-xs text-slate-200">Don&apos;t turn off your PC. This might take a while.</p>
           </div>
         </div>
       )}
 
-      {/* Everyday notification simulations: familiar but deliberately low-stakes. */}
-      {slug === 'calendar-meeting-moved' && (
-        <div className="h-full bg-slate-100 text-slate-900 p-5 sm:p-10 flex items-center justify-center font-sans"><div className="w-full max-w-2xl rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden"><div className="px-6 py-4 border-b border-slate-200 flex justify-between"><b>Calendar</b><span className="text-xs text-slate-500">Today</span></div><div className="p-6 sm:p-8 space-y-6"><div><p className="text-sm text-slate-500">Updated invitation</p><h1 className="text-2xl font-bold mt-1">Friday catch-up</h1><p className="text-sm text-slate-600 mt-2">Organized for {targetName}</p></div><div className="rounded-xl bg-blue-50 border border-blue-100 p-4 flex gap-4"><div className="text-center border-r border-blue-200 pr-4"><p className="text-xs font-semibold text-blue-600">FRI</p><p className="text-2xl font-bold">18</p></div><div><p className="font-semibold">3:30 PM - 4:00 PM</p><p className="text-sm text-slate-600">Moved from 2:30 PM</p></div></div><p className="text-sm text-slate-600">A quick shift so everyone can make it. See you then!</p></div></div></div>
+      {/* 35. Hacker Typing Speed Benchmark */}
+      {['hacker-typing-speed', 'hacker-typing-speed-test', 'hacker-typing-test'].includes(slug) && (
+        <div className="h-full flex flex-col justify-between font-mono bg-black text-green-400 p-6 crt-effect">
+          <div className="flex justify-between items-center border-b border-green-500/30 pb-3">
+            <div className="flex items-center space-x-2">
+              <span className="w-3 h-3 rounded-full bg-green-500 animate-ping" />
+              <span className="font-bold text-xs sm:text-sm">KERNEL SPEED BENCHMARK</span>
+            </div>
+            <span className="text-xs text-green-300">USER: {targetName}</span>
+          </div>
+
+          <div className="my-auto max-w-xl mx-auto w-full space-y-6 text-center">
+            {typingStep === 'prompt' && (
+              <div className="space-y-4 p-8 rounded-3xl bg-slate-900/90 border border-green-500/40">
+                <div className="text-5xl animate-bounce">⌨️</div>
+                <h1 className="text-xl sm:text-2xl font-bold text-white">TYPE ANY KEY TO START BENCHMARK</h1>
+                <input
+                  type="text"
+                  autoFocus
+                  onKeyDown={handleUserTypingKey}
+                  placeholder="Tap any key repeatedly..."
+                  className="w-full px-4 py-3 rounded-xl bg-black border-2 border-green-500 text-center text-green-400 font-mono font-bold text-sm focus:outline-none"
+                />
+              </div>
+            )}
+
+            {typingStep === 'typing' && (
+              <div className="space-y-4 p-6 rounded-3xl bg-black border-2 border-green-500 text-left">
+                <div className="flex justify-between items-center text-xs font-bold text-yellow-300">
+                  <span>LIVE WORDS PER MINUTE: 542.8 WPM</span>
+                  <span className="text-red-400 animate-pulse">OVERCLOCK ACTIVE</span>
+                </div>
+                <div className="space-y-1 text-xs text-green-400 font-mono overflow-hidden h-32">
+                  {hackerLines.map((l, i) => (
+                    <p key={i}>{l}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {typingStep === 'overheat' && (
+              <div className="space-y-4 p-8 rounded-3xl bg-red-950 border-4 border-red-600 text-center animate-pulse">
+                <div className="text-6xl">🔥</div>
+                <h1 className="text-2xl sm:text-3xl font-black text-white">KEYBOARD BUFFER OVERHEAT!</h1>
+                <p className="text-xs text-yellow-300 font-bold">542 WPM EXCEEDED HARDWARE SPECIFICATIONS</p>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-green-500/30 pt-3 text-center text-[11px] text-green-600">
+            AUTO-KEYBOARD SAMPLING ENGINE v4.2
+          </div>
+        </div>
       )}
 
-      {slug === 'wifi-signin-required' && (
-        <div className="h-full bg-slate-50 text-slate-900 p-5 flex items-center justify-center font-sans"><div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-xl p-7 space-y-6"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center text-xl">⌁</div><div><h1 className="font-bold">Guest Wi-Fi</h1><p className="text-xs text-slate-500">Network sign-in required</p></div></div><div className="border-y border-slate-100 py-5 space-y-2"><p className="text-sm font-medium">Welcome back, {targetName}</p><p className="text-sm text-slate-600">Accept the guest-network terms to connect securely.</p></div><button className="w-full rounded-xl bg-cyan-600 py-3 text-sm font-semibold text-white">Continue to internet</button><p className="text-center text-[11px] text-slate-400">This network does not collect passwords or payment details.</p></div></div>
-      )}
-
-      {slug === 'storage-cleanup-suggestion' && (
-        <div className="h-full bg-slate-950 text-white p-5 sm:p-10 flex items-center justify-center font-sans"><div className="w-full max-w-xl rounded-3xl bg-slate-900 border border-white/10 p-6 sm:p-8 space-y-6"><div><p className="text-xs text-slate-400">Device care</p><h1 className="text-2xl font-bold mt-1">Storage suggestions</h1></div><div className="rounded-2xl bg-amber-400/10 border border-amber-300/20 p-5"><div className="flex justify-between text-sm"><span>Storage used</span><span className="font-semibold text-amber-300">82 GB of 128 GB</span></div><div className="h-2 mt-3 rounded-full bg-slate-700 overflow-hidden"><div className="h-full w-[64%] bg-amber-400 rounded-full" /></div></div><div className="rounded-2xl bg-white/5 border border-white/10 p-4 flex items-center justify-between"><div><p className="font-semibold text-sm">Review duplicate screenshots</p><p className="text-xs text-slate-400 mt-1">46 items, about 680 MB</p></div><button className="rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold">Review</button></div><p className="text-xs text-slate-500">Nothing will be removed without your approval.</p></div></div>
-      )}
-
-      {slug === 'package-arriving-early' && (
-        <div className="h-full bg-orange-50 text-slate-900 p-5 sm:p-10 flex items-center justify-center font-sans"><div className="w-full max-w-xl rounded-2xl bg-white border border-orange-100 shadow-xl overflow-hidden"><div className="h-2 bg-orange-500" /><div className="p-7 space-y-6"><div className="flex items-center justify-between"><div><p className="text-xs text-slate-500">Delivery update</p><h1 className="text-2xl font-bold">Your package is arriving early</h1></div><span className="text-3xl">📦</span></div><div className="rounded-xl bg-orange-50 border border-orange-100 p-4"><p className="text-sm font-semibold text-green-700">Out for delivery</p><p className="text-sm text-slate-600 mt-1">Expected today between 2:00 PM and 4:00 PM</p></div><div className="flex items-center gap-2 text-xs text-slate-500"><span className="w-2.5 h-2.5 rounded-full bg-green-500" /> Delivery preferences are unchanged for {targetName}.</div></div></div></div>
-      )}
-
-      {/* Bank Account $1 Billion Glitch */}
+      {/* 36. Bank Account $1 Billion Glitch */}
       {slug === 'bank-balance-glitch' && (
-        <div className="h-full bg-slate-950 text-white p-6 sm:p-10 flex flex-col justify-between font-sans select-none">
+        <div className="h-full bg-slate-950 text-white p-6 sm:p-10 flex flex-col justify-between font-sans">
           <div className="max-w-2xl mx-auto w-full space-y-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center space-x-3">
@@ -808,9 +1123,9 @@ function PrankPlayerContent() {
         </div>
       )}
 
-      {/* FBI Cyber Most Wanted Red Notice */}
-      {slug === 'fbi-most-wanted-alert' && (
-        <div className="h-full bg-slate-950 text-red-500 font-mono p-6 sm:p-10 flex flex-col justify-between crt-effect select-none">
+      {/* 37. FBI Cyber Most Wanted Red Notice */}
+      {['fbi-most-wanted-alert', 'fbi-cyber-lock'].includes(slug) && (
+        <div className="h-full bg-slate-950 text-red-500 font-mono p-6 sm:p-10 flex flex-col justify-between crt-effect">
           <div className="max-w-2xl mx-auto w-full space-y-5 text-center my-auto">
             <div className="w-20 h-20 rounded-full bg-red-600/20 border-2 border-red-600 flex items-center justify-center text-4xl mx-auto animate-pulse">
               🚨
@@ -835,9 +1150,9 @@ function PrankPlayerContent() {
         </div>
       )}
 
-      {/* Critical Battery Explosion */}
+      {/* 38. Critical Battery Explosion */}
       {slug === 'battery-explosion-overheat' && (
-        <div className={`h-full bg-black text-white p-6 sm:p-10 flex flex-col justify-between font-sans select-none ${isShaking ? 'animate-shake' : ''}`}>
+        <div className="h-full bg-black text-white p-6 sm:p-10 flex flex-col justify-between font-sans">
           <div className="max-w-md mx-auto w-full space-y-6 text-center my-auto">
             <div className="w-24 h-24 rounded-full bg-red-600/30 border-4 border-red-500 flex items-center justify-center text-5xl mx-auto animate-ping">
               🔥
@@ -862,9 +1177,9 @@ function PrankPlayerContent() {
         </div>
       )}
 
-      {/* Celebrity Video Call */}
+      {/* 39. Celebrity Video Call */}
       {slug === 'celebrity-video-call' && (
-        <div className="h-full bg-gradient-to-b from-slate-900 via-slate-950 to-black text-white p-8 flex flex-col justify-between font-sans select-none">
+        <div className="h-full bg-gradient-to-b from-slate-900 via-slate-950 to-black text-white p-8 flex flex-col justify-between font-sans">
           <div className="text-center pt-8 space-y-2">
             <p className="text-xs text-slate-400 uppercase tracking-widest font-mono">FaceTime Video Call...</p>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading">Elon Musk 🚀</h1>
@@ -875,13 +1190,13 @@ function PrankPlayerContent() {
           </div>
           <div className="flex justify-center items-center gap-12 pb-12">
             <div className="flex flex-col items-center gap-2">
-              <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center text-2xl shadow-lg cursor-pointer hover:scale-110 transition-transform">
+              <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center text-2xl shadow-lg">
                 📵
               </div>
               <span className="text-xs text-slate-400">Decline</span>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-2xl shadow-lg shadow-green-500/40 animate-bounce cursor-pointer hover:scale-110 transition-transform">
+              <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-2xl shadow-lg shadow-green-500/40 animate-bounce">
                 📞
               </div>
               <span className="text-xs text-green-400 font-bold">Accept Call</span>
@@ -890,9 +1205,9 @@ function PrankPlayerContent() {
         </div>
       )}
 
-      {/* Deepfake AI Voice Cloner */}
+      {/* 40. Deepfake AI Voice Cloner */}
       {slug === 'ai-voice-cloner-leak' && (
-        <div className="h-full bg-slate-950 text-purple-400 font-mono p-6 sm:p-10 flex flex-col justify-between crt-effect select-none">
+        <div className="h-full bg-slate-950 text-purple-400 font-mono p-6 sm:p-10 flex flex-col justify-between crt-effect">
           <div className="max-w-2xl mx-auto w-full space-y-6 my-auto">
             <div className="flex justify-between items-center border-b border-purple-500/40 pb-3">
               <div className="flex items-center space-x-2">
@@ -915,11 +1230,11 @@ function PrankPlayerContent() {
         </div>
       )}
 
-      {/* Spider on Camera Lens */}
+      {/* 41. Spider on Camera Lens */}
       {slug === 'cracked-camera-lens-spider' && (
-        <div className="h-full bg-black text-white p-6 flex flex-col justify-between select-none relative overflow-hidden">
+        <div className="h-full bg-black text-white p-6 flex flex-col justify-between relative overflow-hidden">
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-9xl animate-bounce transform rotate-45 select-none opacity-90 drop-shadow-2xl">
+            <div className="text-9xl animate-bounce transform rotate-45 opacity-90 drop-shadow-2xl">
               🕷️
             </div>
           </div>
@@ -934,9 +1249,9 @@ function PrankPlayerContent() {
         </div>
       )}
 
-      {/* Netflix Account Hijacked */}
-      {slug === 'netflix-account-hijacked' && (
-        <div className="h-full bg-black text-white p-6 sm:p-10 flex flex-col justify-between font-sans select-none">
+      {/* 42. Netflix Account Hijacked */}
+      {['netflix-account-hijacked', 'netflix-expired'].includes(slug) && (
+        <div className="h-full bg-black text-white p-6 sm:p-10 flex flex-col justify-between font-sans">
           <div className="max-w-xl mx-auto w-full space-y-6 my-auto">
             <div className="text-red-600 font-extrabold text-4xl tracking-tighter">NETFLIX</div>
             <div className="p-6 rounded-3xl bg-zinc-900 border border-zinc-800 space-y-4">
@@ -959,9 +1274,9 @@ function PrankPlayerContent() {
         </div>
       )}
 
-      {/* MetaMask Crypto Drained */}
+      {/* 43. MetaMask Crypto Drained */}
       {slug === 'crypto-wallet-drained' && (
-        <div className="h-full bg-zinc-950 text-white p-6 sm:p-10 flex flex-col justify-between font-sans select-none">
+        <div className="h-full bg-zinc-950 text-white p-6 sm:p-10 flex flex-col justify-between font-sans">
           <div className="max-w-md mx-auto w-full space-y-6 my-auto">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <div className="flex items-center space-x-2">
@@ -982,7 +1297,7 @@ function PrankPlayerContent() {
               <div className="p-3 rounded-xl bg-black/60 text-[11px] text-zinc-400 text-left font-mono space-y-1">
                 <p>To: 0x7a250d...659F2488D</p>
                 <p>Gas Fee: 0.012 ETH ($42.10)</p>
-                <p>Status: Broadcasating to 8,421 Nodes...</p>
+                <p>Status: Broadcasting to 8,421 Nodes...</p>
               </div>
             </div>
           </div>
@@ -990,9 +1305,9 @@ function PrankPlayerContent() {
         </div>
       )}
 
-      {/* iOS Beta Bootloop */}
+      {/* 44. iOS Beta Bootloop */}
       {slug === 'fake-ios-software-update-stuck' && (
-        <div className="h-full bg-black text-white p-8 flex flex-col items-center justify-center text-center space-y-8 font-sans select-none">
+        <div className="h-full bg-black text-white p-8 flex flex-col items-center justify-center text-center space-y-8 font-sans">
           <div className="text-7xl"></div>
           <div className="w-64 space-y-3">
             <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
@@ -1004,9 +1319,9 @@ function PrankPlayerContent() {
         </div>
       )}
 
-      {/* Lottery Jackpot Winner */}
+      {/* 45. Lottery Jackpot Winner */}
       {slug === 'lottery-jackpot-winner' && (
-        <div className="h-full bg-gradient-to-b from-amber-950 via-slate-950 to-black text-white p-6 sm:p-10 flex flex-col justify-between font-sans select-none">
+        <div className="h-full bg-gradient-to-b from-amber-950 via-slate-950 to-black text-white p-6 sm:p-10 flex flex-col justify-between font-sans">
           <div className="max-w-2xl mx-auto w-full space-y-6 text-center my-auto">
             <div className="text-5xl animate-bounce">🌟 🎟️ 🌟</div>
             <div className="space-y-2">
@@ -1036,28 +1351,63 @@ function PrankPlayerContent() {
         </div>
       )}
 
-      {/* Generic Dynamic Prank Player for All Other Pranks */}
-      {!['windows-11-bsod', 'matrix-hacker', 'fake-ransomware', 'pizza-delivery-tracker', 'hacker-typing-speed', 'hacker-typing-speed-test', 'hacker-typing-test', 'fake-terminal-sudo-rm-rf', 'ghost-camera-jumpscare', 'exam-cancelled-alert', 'promotion-email-ceo', 'ceo-promotion-email', 'birthday-surprise-countdown', 'android-system-update-loop', 'android-update-loop', 'iphone-icloud-lock', 'fortnite-vbucks-generator', 'tiktok-account-deleted', 'movie-credits-roll', 'webcam-hacker-detected', 'browser-memory-leak-99', 'browser-memory-leak', 'youtube-copyright-strike', 'slack-everyone-emergency', 'friend-zone-alert', 'countdown-self-destruct', 'fake-windows-loading-bar', 'fake-windows-loading', 'calendar-meeting-moved', 'wifi-signin-required', 'storage-cleanup-suggestion', 'package-arriving-early', 'bank-balance-glitch', 'fbi-most-wanted-alert', 'battery-explosion-overheat', 'celebrity-video-call', 'ai-voice-cloner-leak', 'cracked-camera-lens-spider', 'netflix-account-hijacked', 'crypto-wallet-drained', 'fake-ios-software-update-stuck', 'lottery-jackpot-winner'].includes(slug) && !slug.includes('typing') && (
-        <div className="h-full bg-dark-900 text-white p-8 flex flex-col items-center justify-center text-center space-y-6 animate-blur-in">
-          {prank.customImageUrl ? (
-            <div className="w-full max-w-lg h-64 rounded-3xl overflow-hidden border-2 border-purple-500/50 shadow-2xl shadow-purple-500/20">
-              <img src={prank.customImageUrl} alt={prank.title} className="w-full h-full object-cover" />
+      {/* 46. Calendar Meeting Moved */}
+      {slug === 'calendar-meeting-moved' && (
+        <div className="h-full bg-slate-100 text-slate-900 p-5 sm:p-10 flex items-center justify-center font-sans">
+          <div className="w-full max-w-2xl rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between"><b>Calendar</b><span className="text-xs text-slate-500">Today</span></div>
+            <div className="p-6 sm:p-8 space-y-6">
+              <div>
+                <p className="text-sm text-slate-500">Updated invitation</p>
+                <h1 className="text-2xl font-bold mt-1">Friday Executive Strategy</h1>
+                <p className="text-sm text-slate-600 mt-2">Organized for {targetName}</p>
+              </div>
+              <div className="rounded-xl bg-blue-50 border border-blue-100 p-4 flex gap-4">
+                <div className="text-center border-r border-blue-200 pr-4">
+                  <p className="text-xs font-semibold text-blue-600">FRI</p>
+                  <p className="text-2xl font-bold">18</p>
+                </div>
+                <div>
+                  <p className="font-semibold">3:30 PM - 4:00 PM</p>
+                  <p className="text-sm text-slate-600">Moved from 2:30 PM</p>
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="w-28 h-28 rounded-full bg-purple-500/20 border-2 border-purple-500 flex items-center justify-center text-6xl animate-pulse pulse-ring">
-              {prank.thumbnail}
-            </div>
-          )}
-          <div className="space-y-2">
-            <h1 className="text-3xl font-extrabold text-white font-heading">{prank.title}</h1>
-            <p className="text-xs text-neon-cyan font-mono font-bold">Target: {targetName}</p>
-            <p className="text-sm text-slate-400 max-w-md mx-auto">{prank.description}</p>
           </div>
-          <div className="p-4 rounded-2xl glass-card border border-white/10 space-y-1">
-            <div className="text-xs text-slate-500 font-mono">SIMULATION ACTIVE</div>
-            <div className="text-2xl font-mono text-neon-purple font-bold">
-              {timeLeft}s remaining
+        </div>
+      )}
+
+      {/* 47. Wi-Fi Sign-in Required */}
+      {slug === 'wifi-signin-required' && (
+        <div className="h-full bg-slate-50 text-slate-900 p-5 flex items-center justify-center font-sans">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-xl p-7 space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center text-xl">⌁</div>
+              <div><h1 className="font-bold">Guest Wi-Fi Portal</h1><p className="text-xs text-slate-500">Sign-in required for {targetName}</p></div>
             </div>
+            <button className="w-full rounded-xl bg-cyan-600 py-3 text-sm font-semibold text-white">Continue to internet</button>
+          </div>
+        </div>
+      )}
+
+      {/* 48. Storage Cleanup */}
+      {slug === 'storage-cleanup-suggestion' && (
+        <div className="h-full bg-slate-950 text-white p-5 sm:p-10 flex items-center justify-center font-sans">
+          <div className="w-full max-w-xl rounded-3xl bg-slate-900 border border-white/10 p-6 sm:p-8 space-y-6">
+            <h1 className="text-2xl font-bold mt-1">Storage full warning for {targetName}</h1>
+            <div className="rounded-2xl bg-amber-400/10 border border-amber-300/20 p-5">
+              <span className="font-semibold text-amber-300">127.9 GB of 128 GB Used (99%)</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 49. Package Arriving Early */}
+      {slug === 'package-arriving-early' && (
+        <div className="h-full bg-orange-50 text-slate-900 p-5 sm:p-10 flex items-center justify-center font-sans">
+          <div className="w-full max-w-xl rounded-2xl bg-white border border-orange-100 shadow-xl p-7 space-y-6">
+            <h1 className="text-2xl font-bold">Special Delivery Package Arriving for {targetName}</h1>
+            <div className="p-4 rounded-xl bg-orange-100 text-orange-900 font-semibold">Out for delivery by Courier #94</div>
           </div>
         </div>
       )}

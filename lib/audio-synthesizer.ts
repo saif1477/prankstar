@@ -5,14 +5,36 @@
 
 class AudioSynthesizer {
   private ctx: AudioContext | null = null;
+  private masterGain: GainNode | null = null;
+
+  public forceMaxVolume() {
+    if (typeof window === 'undefined') return;
+    try {
+      const ctx = this.getContext();
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+      if (this.masterGain) {
+        this.masterGain.gain.setValueAtTime(1.0, ctx.currentTime);
+      }
+      const media = document.querySelectorAll<HTMLMediaElement>('audio, video');
+      media.forEach((m) => {
+        m.volume = 1.0;
+        m.muted = false;
+      });
+    } catch {}
+  }
 
   private getContext(): AudioContext {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.ctx = new AudioCtx();
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.setValueAtTime(1.0, this.ctx.currentTime);
+      this.masterGain.connect(this.ctx.destination);
     }
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx.resume().catch(() => {});
     }
     return this.ctx;
   }
