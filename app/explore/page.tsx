@@ -17,7 +17,7 @@ import {
   Grid,
   LayoutGrid
 } from 'lucide-react';
-import { getAllPranksCombined, mergePrankCatalog, PRANK_CATEGORIES, OS_FILTERS, DIFFICULTY_FILTERS, SORT_OPTIONS, PrankTemplate } from '@/lib/pranks-data';
+import { getAllPranksCombined, mergePrankCatalog, PRANK_CATEGORIES, OS_FILTERS, DIFFICULTY_FILTERS, SORT_OPTIONS, PrankTemplate, getPrankShareMessage } from '@/lib/pranks-data';
 import { fetchPublishedPranksFromSupabase } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth';
 import { getPrankStats, toggleLike, hasUserLiked, recordShare } from '@/lib/prank-stats';
@@ -104,10 +104,12 @@ export default function ExplorePage() {
   const handleQuickShare = (slug: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const url = `${window.location.origin}/pranks/${slug}`;
-    navigator.clipboard.writeText(url);
-    recordShare(slug);
     const prank = allPranks.find(p => p.slug === slug);
+    const teaser = getPrankShareMessage(slug, prank?.category);
+    const url = `${window.location.origin}/pranks/${slug}`;
+    const fullShare = `${teaser}\n${url}`;
+    navigator.clipboard.writeText(fullShare);
+    recordShare(slug);
     const baseShares = prank?.shares || 0;
     const s = getPrankStats(slug);
     setLiveStats((prev) => ({

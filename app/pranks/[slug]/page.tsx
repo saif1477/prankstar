@@ -8,7 +8,7 @@ import {
   Flag, X, Send, ThumbsUp, ExternalLink, Bookmark, QrCode,
   ChevronRight
 } from 'lucide-react';
-import { getAllPranksCombined, PrankTemplate } from '@/lib/pranks-data';
+import { getAllPranksCombined, PrankTemplate, getPrankShareMessage } from '@/lib/pranks-data';
 import { getCurrentUser } from '@/lib/auth';
 import { getPrankStats, toggleLike, hasUserLiked, recordShare } from '@/lib/prank-stats';
 import { toggleFavoritePrank, getUserStats, addToHistory } from '@/lib/gamification';
@@ -27,6 +27,7 @@ export default function PrankConfiguratorPage() {
   const [targetName, setTargetName] = useState('');
   const [timer, setTimer] = useState(prank?.duration || 15);
   const [revealMsg, setRevealMsg] = useState(prank?.revealMessage || '');
+  const [customShareText, setCustomShareText] = useState('');
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState(false);
   const [favorited, setFavorited] = useState(false);
@@ -58,8 +59,16 @@ export default function PrankConfiguratorPage() {
     const userStats = getUserStats();
     setFavorited(userStats.favorites.includes(slug));
     setComments(getCommentsForPrank(slug));
+    setCustomShareText(getPrankShareMessage(slug, prank.category, targetName));
     if (u) addToHistory(slug);
   }, [slug]);
+
+  // Keep share teaser in sync when targetName changes if user hasn't heavily customized it
+  useEffect(() => {
+    if (prank) {
+      setCustomShareText(getPrankShareMessage(slug, prank.category, targetName));
+    }
+  }, [targetName, slug, prank]);
 
   if (!prank) {
     return (
@@ -93,18 +102,21 @@ export default function PrankConfiguratorPage() {
     return `${base}/play/${slug}?${params.toString()}`;
   };
 
+  const currentTeaserText = customShareText || getPrankShareMessage(slug, prank.category, targetName);
+
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(generateLink());
+    const fullShare = `${currentTeaserText}\n${generateLink()}`;
+    navigator.clipboard.writeText(fullShare);
     recordShare(slug);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const shareUrl = encodeURIComponent(generateLink());
-  const shareText = encodeURIComponent('Hey, you got something to see 👀');
+  const shareText = encodeURIComponent(currentTeaserText);
 
   const socialLinks = [
-    { name: 'WhatsApp', icon: '💬', url: `https://wa.me/?text=${shareText}%20${shareUrl}`, color: 'bg-green-500/20 text-green-400 border-green-500/30' },
+    { name: 'WhatsApp', icon: '💬', url: `https://wa.me/?text=${shareText}%0A${shareUrl}`, color: 'bg-green-500/20 text-green-400 border-green-500/30' },
     { name: 'Telegram', icon: '✈️', url: `https://t.me/share/url?url=${shareUrl}&text=${shareText}`, color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
     { name: 'Facebook', icon: '📘', url: `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`, color: 'bg-blue-600/20 text-blue-300 border-blue-600/30' },
     { name: 'X (Twitter)', icon: '🐦', url: `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`, color: 'bg-slate-700/40 text-slate-200 border-slate-600/30' },
@@ -189,11 +201,43 @@ export default function PrankConfiguratorPage() {
 
       {/* Social Share Panel */}
       {showShareMenu && (
-        <div className="glass-card rounded-2xl p-6 border border-white/10 space-y-4 animate-blur-in">
+        <div className="glass-card rounded-2xl p-6 border border-white/10 space-y-5 animate-blur-in">
           <div className="flex items-center justify-between">
-            <h3 className="font-heading font-bold text-lg text-white">Share This Prank</h3>
+            <div>
+              <h3 className="font-heading font-bold text-lg text-white">Share This Prank</h3>
+              <p className="text-xs text-slate-400">Personalized teaser message crafted to fool your target</p>
+            </div>
             <button onClick={() => setShowShareMenu(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"><X className="w-4 h-4" /></button>
           </div>
+
+          {/* Deceptive Teaser Input & Preview */}
+          <div className="space-y-2 p-4 rounded-xl bg-slate-900/80 border border-purple-500/30">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-neon-purple flex items-center space-x-1.5">
+                <span>💬</span>
+                <span>Deceptive Teaser Message</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setCustomShareText(getPrankShareMessage(slug, prank.category, targetName))}
+                className="text-[11px] text-neon-cyan hover:underline"
+              >
+                Reset to Default
+              </button>
+            </div>
+            <input
+              type="text"
+              value={customShareText}
+              onChange={(e) => setCustomShareText(e.target.value)}
+              placeholder="Enter teaser message..."
+              className="w-full px-3 py-2 rounded-lg bg-black/60 border border-white/10 text-xs text-white placeholder-slate-500 focus:border-neon-purple focus:outline-none"
+            />
+            <div className="text-[11px] text-slate-400 flex items-center space-x-1">
+              <span className="text-green-400 font-bold">Preview:</span>
+              <span className="italic text-slate-300 truncate">&ldquo;{currentTeaserText}&rdquo;</span>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
             {socialLinks.map(s => (
               <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" className={`p-3 rounded-xl border text-center space-y-1.5 hover:scale-105 transition-transform ${s.color}`}>
@@ -202,10 +246,11 @@ export default function PrankConfiguratorPage() {
               </a>
             ))}
           </div>
+
           <div className="flex gap-3">
             <button onClick={handleCopyLink} className="flex-grow py-3 rounded-xl btn-neon-cyan font-heading font-bold text-xs text-white flex items-center justify-center space-x-2">
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              <span>{copied ? 'Link Copied!' : 'Copy Prank Link'}</span>
+              <span>{copied ? 'Link & Teaser Copied!' : 'Copy Prank Link & Teaser'}</span>
             </button>
           </div>
         </div>

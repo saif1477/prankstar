@@ -1188,3 +1188,173 @@ export function mergePrankCatalog(local: PrankTemplate[], remote: PublishedPrank
   remoteTemplates.forEach((prank) => merged.set(prank.slug, prank));
   return Array.from(merged.values());
 }
+
+/**
+ * Returns a customized, deceptive, context-specific teaser message for sharing a prank link.
+ * E.g., birthday pranks show "Happy Birthday! You got a surprise", typing test shows "Check your typing speed", etc.
+ */
+export function getPrankShareMessage(slug: string, category?: string, targetName?: string): string {
+  const namePrefix = targetName && targetName.trim() ? `${targetName.trim()}, ` : '';
+  const nameSuffix = targetName && targetName.trim() ? ` for ${targetName.trim()}` : '';
+
+  // 1. Birthday Pranks
+  if (slug.includes('birthday') || category === 'Birthday') {
+    return targetName && targetName.trim()
+      ? `🎉 Happy Birthday ${targetName.trim()}! You got a special surprise waiting for you 🎁`
+      : `🎉 Happy Birthday! You got a special surprise waiting for you 🎁`;
+  }
+
+  // 2. Typing Speed / Keyboard Benchmark
+  if (slug.includes('typing') || category === 'Typing') {
+    return `⌨️ ${namePrefix}check your typing speed! Test how fast you can type per second 🚀`;
+  }
+
+  // 3. Bank Account Glitch / Money
+  if (slug.includes('bank') || slug.includes('money') || slug === 'bank-balance-glitch') {
+    return `💰 Official Bank Wire Notice: $1,245,892,100.00 transfer confirmation${nameSuffix} 🏦`;
+  }
+
+  // 4. State Lottery Winner
+  if (slug.includes('lottery') || slug === 'lottery-jackpot-winner') {
+    return `🌟 Congratulations! Your State Lottery Ticket has been verified as a Winner! 🎟️`;
+  }
+
+  // 5. FaceTime / Celebrity Call
+  if (slug.includes('call') || slug === 'celebrity-video-call') {
+    return `📱 Incoming FaceTime Video Call from Elon Musk... Tap to answer now 🚀`;
+  }
+
+  // 6. Uber Eats / Food Delivery
+  if (slug.includes('pizza') || slug.includes('delivery')) {
+    return `🍕 Your Uber Eats food delivery order is approaching your address! Track driver live 🚗`;
+  }
+
+  // 7. Exam Cancelled / School
+  if (slug.includes('exam') || category === 'School') {
+    return `🎓 Official University Portal Alert: Final Examination Schedule Notice 📚`;
+  }
+
+  // 8. CEO / Executive Promotion
+  if (slug.includes('promotion') || slug.includes('ceo') || (category === 'Office' && slug.includes('email'))) {
+    return `💼 Internal Confidential: Executive Promotion & Compensation memo from the CEO 📄`;
+  }
+
+  // 9. FBI / Law Enforcement
+  if (slug.includes('fbi') || slug.includes('police')) {
+    return `🚨 Official Legal Notice: Department of Justice Cyber Crime Division Case File ⚖️`;
+  }
+
+  // 10. Battery Overheat / Phone Hardware
+  if (slug.includes('battery') || slug.includes('overheat')) {
+    return `🔥 Critical Hardware Health Alert: Battery thermal runaway warning on device ⚠️`;
+  }
+
+  // 11. Spider on Camera / Cracked Screen
+  if (slug.includes('spider') || slug.includes('crack') || slug.includes('shatter')) {
+    return `💥 Tap your screen to test this optical display touch-calibration tool 📱`;
+  }
+
+  // 12. Crypto / MetaMask
+  if (slug.includes('crypto') || slug.includes('wallet') || slug.includes('ethereum')) {
+    return `🦊 Web3 Alert: Ethereum transaction confirmation and transfer receipt #9481 💎`;
+  }
+
+  // 13. Netflix
+  if (slug.includes('netflix')) {
+    return `🎬 Netflix Security Alert: New unfamiliar device streaming on your account 📺`;
+  }
+
+  // 14. Instagram
+  if (slug.includes('instagram')) {
+    return `📸 Instagram Notice: Important message regarding your account status ⚠️`;
+  }
+
+  // 15. Steam / Gaming
+  if (slug.includes('steam') || slug.includes('vac')) {
+    return `🎮 Steam Alert: Matchmaking & Account Inventory Security Update 🛡️`;
+  }
+
+  // 16. TikTok
+  if (slug.includes('tiktok')) {
+    return `🎵 TikTok Notification: Important notice regarding your recent upload 📱`;
+  }
+
+  // 17. Zoom Emergency Meeting
+  if (slug.includes('zoom')) {
+    return `📹 Zoom Invitation: CEO Emergency All-Hands Meeting starting right now ⏰`;
+  }
+
+  // 18. Slack Emergency
+  if (slug.includes('slack')) {
+    return `💬 Slack Alert: Emergency @everyone ping from Management - Response Required ⚡`;
+  }
+
+  // 19. Christmas Elf Tracker
+  if (slug.includes('christmas') || slug.includes('elf') || category === 'Christmas') {
+    return `🎄 North Pole Santa Radar: Check your position on the Naughty or Nice list 🎅`;
+  }
+
+  // 20. April Fools / Rickroll
+  if (slug.includes('rickroll') || category === 'April Fools' || category === 'Classic') {
+    return `👀 Check out this private video shared with you! You have to see this 😂`;
+  }
+
+  // 21. Friend Zone Scanner
+  if (slug.includes('friend-zone')) {
+    return `💔 AI Relationship Scanner: Check your romantic compatibility score result 💘`;
+  }
+
+  // 22. Package Arriving Early
+  if (slug.includes('package')) {
+    return `📦 Delivery Notification: A surprise package is out for delivery to your address! 🚚`;
+  }
+
+  // 23. Wi-Fi Sign-in
+  if (slug.includes('wifi')) {
+    return `📶 Free High-Speed 5G Guest Wi-Fi Access: Tap to connect securely 🌐`;
+  }
+
+  // 24. Calendar Meeting Moved
+  if (slug.includes('calendar')) {
+    return `📅 Google Calendar Update: Meeting schedule change notification 🕒`;
+  }
+
+  // 25. Storage Cleanup
+  if (slug.includes('storage')) {
+    return `🗂️ Device Alert: Review storage optimization recommendations 💾`;
+  }
+
+  // 26. Hollywood Movie Credits
+  if (slug.includes('movie') || category === 'Movie Style') {
+    return `🎬 Exclusive Hollywood Movie Premiere Preview - Starring You! 🍿`;
+  }
+
+  // 27. AI Voice Cloner / Siri
+  if (slug.includes('voice') || category === 'AI' || category === 'Voice') {
+    return `🤖 Listen to this AI Voice Clone generated from your vocal audio 🎙️`;
+  }
+
+  // 28. Windows BSOD / Fake Virus
+  if (slug.includes('windows') || category === 'Windows' || category === 'Fake Virus') {
+    return `💻 Urgent: Important Windows system update and diagnostics report for your PC ⚠️`;
+  }
+
+  // 29. Matrix Cyber Hacker / Terminal
+  if (slug.includes('matrix') || slug.includes('terminal') || category === 'Fake Hacker' || category === 'Terminal') {
+    return `🕵️ Encrypted confidential transmission: Open now before security protocol expires 🔐`;
+  }
+
+  // 30. Fortnite V-Bucks
+  if (slug.includes('fortnite') || slug.includes('vbucks')) {
+    return `🎮 Epic Games: 50,000 Free V-Bucks code voucher claim link 💎`;
+  }
+
+  // 31. Ghost / Scary
+  if (slug.includes('ghost') || category === 'Scary') {
+    return `👻 Open camera feed: Paranormal infrared motion detected nearby 🕯️`;
+  }
+
+  // Default fallback teaser
+  return `👀 ${namePrefix}you got something special to see! Tap here to open 🎁`;
+}
+

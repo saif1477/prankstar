@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
-import { MASTER_PRANKS, PrankTemplate } from '@/lib/pranks-data';
+import { MASTER_PRANKS, PrankTemplate, getPrankShareMessage } from '@/lib/pranks-data';
 import { getPublishedPranks } from '@/lib/db';
 import { fetchPublishedPranksFromSupabase } from '@/lib/supabase';
 import { getCustomPranks } from '@/lib/builder-store';
@@ -303,7 +303,9 @@ function PrankPlayerContent() {
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
+    const teaser = getPrankShareMessage(slug, prank?.category, targetName);
+    const fullShare = `${teaser}\n${window.location.href}`;
+    navigator.clipboard.writeText(fullShare);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
