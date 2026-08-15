@@ -47,6 +47,7 @@ export default function PrankConfiguratorPage() {
 
   // Share menu
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   useEffect(() => {
     if (!prank) return;
@@ -110,6 +111,21 @@ export default function PrankConfiguratorPage() {
     recordShare(slug);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleNativeShare = async () => {
+    recordShare(slug);
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: prank.title,
+          text: currentTeaserText,
+          url: generateLink(),
+        });
+        return;
+      } catch {}
+    }
+    handleCopyLink();
   };
 
   const shareUrl = encodeURIComponent(generateLink());
@@ -259,11 +275,27 @@ export default function PrankConfiguratorPage() {
       {/* Configurator + Launch */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="glass-card rounded-2xl p-6 border border-white/10 space-y-5">
-          <h3 className="font-heading font-bold text-lg text-white">Configure &amp; Launch</h3>
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div>
+              <h3 className="font-heading font-bold text-lg text-white">Configure &amp; Personalize</h3>
+              <p className="text-xs text-slate-400">Tailor the prank with victim&apos;s name and custom timer</p>
+            </div>
+            <span className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">CUSTOM LINK</span>
+          </div>
+
           <div className="space-y-4">
             <div>
-              <label className="block text-xs text-slate-300 font-semibold mb-1">Target Name</label>
-              <input type="text" value={targetName} onChange={e => setTargetName(e.target.value)} placeholder="Enter victim's name" className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-white/10 text-sm text-white placeholder-slate-500 focus:border-neon-purple focus:outline-none" />
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs text-slate-300 font-semibold">Target Victim Name</label>
+                {targetName && <span className="text-[10px] text-green-400 font-mono">Personalized for: {targetName}</span>}
+              </div>
+              <input
+                type="text"
+                value={targetName}
+                onChange={e => setTargetName(e.target.value)}
+                placeholder="e.g. Alex, Sarah, Boss, Mom..."
+                className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-white/10 text-sm text-white placeholder-slate-500 focus:border-neon-purple focus:outline-none"
+              />
             </div>
             <div>
               <label className="block text-xs text-slate-300 font-semibold mb-1">Timer (seconds): {timer}s</label>
@@ -274,10 +306,69 @@ export default function PrankConfiguratorPage() {
               <input type="text" value={revealMsg} onChange={e => setRevealMsg(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-white/10 text-sm text-white focus:border-neon-purple focus:outline-none" />
             </div>
           </div>
-          <button onClick={handleCopyLink} className="w-full py-3 rounded-xl btn-neon-cyan font-heading font-bold text-sm text-white flex items-center justify-center space-x-2">
-            {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-            <span>{copied ? 'Link Copied!' : 'Copy Shareable Prank Link'}</span>
-          </button>
+
+          {/* Direct Share Options Under Custom Name Section */}
+          <div className="pt-3 border-t border-white/10 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-white flex items-center space-x-1.5">
+                <span>🚀</span>
+                <span>Send to {targetName ? targetName : 'Victim'} Directly</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowQrModal(true)}
+                className="text-[11px] text-neon-cyan hover:underline flex items-center space-x-1"
+              >
+                <QrCode className="w-3.5 h-3.5" />
+                <span>QR Code</span>
+              </button>
+            </div>
+
+            {/* Teaser Preview */}
+            <div className="p-3 rounded-xl bg-black/60 border border-purple-500/30 text-xs space-y-1">
+              <div className="text-[10px] text-slate-400 font-bold flex items-center justify-between">
+                <span className="text-purple-300">Deceptive Teaser Attached:</span>
+                <span className="text-slate-500">Auto-generated</span>
+              </div>
+              <p className="text-white italic text-xs leading-relaxed">&ldquo;{currentTeaserText}&rdquo;</p>
+            </div>
+
+            {/* Quick 1-Tap Social Share Buttons */}
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-1">
+              {socialLinks.map(s => (
+                <a
+                  key={s.name}
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => recordShare(slug)}
+                  className={`p-2 rounded-xl border text-center space-y-1 hover:scale-105 transition-transform ${s.color}`}
+                  title={`Share on ${s.name}`}
+                >
+                  <div className="text-xl">{s.icon}</div>
+                  <div className="text-[9px] font-bold truncate">{s.name}</div>
+                </a>
+              ))}
+            </div>
+
+            {/* Primary Action Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <button
+                onClick={handleCopyLink}
+                className="py-3 px-4 rounded-xl btn-neon-cyan font-heading font-bold text-xs text-white flex items-center justify-center space-x-2 shadow-lg"
+              >
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                <span>{copied ? 'Link & Teaser Copied!' : 'Copy Link & Teaser'}</span>
+              </button>
+              <button
+                onClick={handleNativeShare}
+                className="py-3 px-4 rounded-xl btn-neon-purple font-heading font-bold text-xs text-white flex items-center justify-center space-x-2 shadow-lg"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>Share via Apps</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-col justify-between gap-4">
@@ -388,6 +479,42 @@ export default function PrankConfiguratorPage() {
                 <button onClick={handleReport} className="w-full py-3 rounded-xl bg-red-500/20 text-red-400 border border-red-500/40 font-heading font-bold text-xs">Submit Report</button>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-sm glass-card rounded-3xl p-6 border border-white/10 space-y-5 text-center shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center space-x-2">
+                <QrCode className="w-5 h-5 text-neon-cyan" />
+                <h3 className="font-heading font-bold text-base text-white">Scan Prank QR Code</h3>
+              </div>
+              <button onClick={() => setShowQrModal(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"><X className="w-4 h-4" /></button>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl mx-auto w-fit shadow-xl border-4 border-purple-500/40">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(generateLink())}`}
+                alt="Prank QR Code"
+                className="w-52 h-52 object-contain"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs text-white font-bold">{targetName ? `Personalized for ${targetName}` : prank.title}</p>
+              <p className="text-[11px] text-slate-400">Scan with any phone camera to instantly launch this prank!</p>
+            </div>
+
+            <button
+              onClick={handleCopyLink}
+              className="w-full py-2.5 rounded-xl btn-neon-cyan font-bold text-xs text-white flex items-center justify-center space-x-2"
+            >
+              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              <span>{copied ? 'Link Copied!' : 'Copy Link Instead'}</span>
+            </button>
           </div>
         </div>
       )}
